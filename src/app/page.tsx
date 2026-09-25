@@ -84,20 +84,25 @@ export default function Home() {
       {/* Footer */}
       <footer className="relative z-10 border-t border-slate-800/80 bg-slate-950/80 backdrop-blur-md py-8 no-print mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-            <span className="text-slate-400">Контакты:</span>
-            <span className="font-medium text-slate-300 font-mono">Alexander Afanasiev</span>
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+            <div className="flex items-center space-x-1.5">
+              <span className="text-slate-400">Provided by:</span>
+              <span className="font-semibold text-slate-200 font-mono">Alexander Afanasiev</span>
+            </div>
             <span className="text-slate-700 hidden sm:inline">•</span>
-            <a
-              href="https://github.com/stoletoff"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 text-slate-300 hover:text-orange-400 transition-colors py-1 px-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 shadow-sm"
-              title="GitHub профиль stoletoff"
-            >
-              <GithubIcon className="w-3.5 h-3.5 fill-current text-slate-200" />
-              <span className="font-mono">https://github.com/stoletoff</span>
-            </a>
+            <div className="flex items-center space-x-1.5">
+              <span className="text-slate-400">Social:</span>
+              <a
+                href="https://github.com/stoletoff"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1.5 text-slate-300 hover:text-orange-400 transition-colors py-1 px-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 shadow-sm"
+                title="GitHub: stoletoff"
+              >
+                <GithubIcon className="w-3.5 h-3.5 fill-current text-slate-200" />
+                <span className="font-mono">https://github.com/stoletoff</span>
+              </a>
+            </div>
           </div>
 
           <div className="flex items-center space-x-4">
