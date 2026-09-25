@@ -194,7 +194,7 @@ ${cablesText || "  (Кабели не указаны)"}
           <div>
             <div className="flex items-center space-x-2 text-xs font-mono text-red-400 uppercase tracking-wider mb-2">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-              Модуль 2 • svt Brandschutz
+              UNIVERSALSCHOTT • svt Brandschutz
             </div>
             <h2 className="text-2xl font-bold text-white tracking-tight">
               Кабельные проходки универсальной системы UNIVERSALSCHOTT
@@ -217,11 +217,11 @@ ${cablesText || "  (Кабели не указаны)"}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* FORM PANEL (7 cols) */}
         <div className="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-xl space-y-7">
-          {/* Step 1: Penetration Geometry */}
+          {/* Penetration Geometry */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="text-sm font-semibold text-slate-200">
-                1. Геометрия проема проходки
+                Геометрия проема проходки
               </label>
               <span className="text-xs font-mono text-slate-400">
                 S = <strong className="text-orange-400">{result.openingAreaM2}</strong> м² ({result.openingAreaMm2.toLocaleString()} мм²)
@@ -364,10 +364,10 @@ ${cablesText || "  (Кабели не указаны)"}
             )}
           </div>
 
-          {/* Step 2: System Settings (EI + Application Method + Humidity) */}
+          {/* System Settings (EI + Application Method + Humidity) */}
           <div className="space-y-4 pt-3 border-t border-slate-800/80">
             <label className="text-sm font-semibold text-slate-200">
-              2. Параметры системы UNIVERSALSCHOTT
+              Параметры огнестойкости и нанесения
             </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -477,12 +477,12 @@ ${cablesText || "  (Кабели не указаны)"}
             />
           </div>
 
-          {/* Step 3: Dynamic Cables List */}
+          {/* Dynamic Cables List */}
           <div className="space-y-4 pt-3 border-t border-slate-800/80">
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-sm font-semibold text-slate-200 block">
-                  3. Кабели в проходке
+                  Кабели в проходке
                 </label>
                 <span className="text-xs text-slate-400">
                   Суммарное сечение:{" "}

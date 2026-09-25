@@ -92,7 +92,7 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
             }`}
           >
             <ShieldCheck className="w-4 h-4 mr-2 text-orange-500" />
-            1. Огнезащита кабельных линий (FLAMMOPLAST KS 1)
+            Огнезащита кабельных линий (FLAMMOPLAST KS 1)
           </button>
 
           <button
@@ -104,7 +104,7 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
             }`}
           >
             <Flame className="w-4 h-4 mr-2 text-red-500" />
-            2. Кабельные проходки (UNIVERSALSCHOTT)
+            Кабельные проходки (UNIVERSALSCHOTT)
           </button>
 
           <button
@@ -116,7 +116,7 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
             }`}
           >
             <Layers className="w-4 h-4 mr-2 text-amber-500" />
-            3. Сводная ведомость проекта
+            Сводная ведомость проекта
             {summaryCount > 0 && (
               <span className="ml-2 px-1.5 py-0.2 rounded-full text-xs bg-slate-800 text-orange-300 font-mono">
                 {summaryCount}

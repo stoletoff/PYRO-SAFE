@@ -170,7 +170,7 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
           <div>
             <div className="flex items-center space-x-2 text-xs font-mono text-orange-400 uppercase tracking-wider mb-2">
               <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
-              Модуль 1 • svt Brandschutz
+              FLAMMOPLAST KS 1 • svt Brandschutz
             </div>
             <h2 className="text-2xl font-bold text-white tracking-tight">
               Огнезащита кабельных линий составом FLAMMOPLAST KS 1
@@ -193,10 +193,10 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* FORM PANEL (7 cols) */}
         <div className="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-xl space-y-7">
-          {/* Step 1: Type Selection */}
+          {/* Type Selection */}
           <div className="space-y-3">
             <label className="text-sm font-semibold text-slate-200 flex items-center justify-between">
-              <span>1. Тип прокладки кабелей</span>
+              <span>Тип прокладки кабелей</span>
               <span className="text-xs text-slate-500 font-mono">Формула площади (S)</span>
             </label>
 
@@ -244,11 +244,11 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
             />
           </div>
 
-          {/* Step 2: Route Length (L) */}
+          {/* Route Length (L) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-semibold text-slate-200">
-                2. Длина кабельной трассы (L)
+                Длина кабельной трассы (L)
               </label>
               <span className="text-xs font-mono text-orange-400">метры (м)</span>
             </div>
@@ -298,11 +298,11 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
             />
           </div>
 
-          {/* Step 3: Dimension (d or b) */}
+          {/* Dimension (d or b) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-semibold text-slate-200">
-                3. {currentTypeConfig.dimensionLabel}
+                {currentTypeConfig.dimensionLabel}
               </label>
               <span className="text-xs font-mono text-orange-400">миллиметры (мм)</span>
             </div>
@@ -358,12 +358,12 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
             />
           </div>
 
-          {/* Step 4: Cable Count (N) - only active for single cable */}
+          {/* Cable Count (N) - only active for single cable */}
           {formValues.installationType === "single" && (
             <div className="space-y-2 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-semibold text-slate-200">
-                  4. Количество одиночных кабелей (N)
+                  Количество одиночных кабелей (N)
                 </label>
                 <span className="text-xs font-mono text-orange-400">штук</span>
               </div>
