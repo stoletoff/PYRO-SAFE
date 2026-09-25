@@ -175,11 +175,15 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
             <h2 className="text-2xl font-bold text-white tracking-tight">
               Огнезащита кабельных линий составом FLAMMOPLAST KS 1
             </h2>
-            <p className="text-sm text-slate-400 mt-1 max-w-3xl">
-              Толщина сухого слоя: <strong className="text-slate-200">0,72 мм</strong>.
-              Нормативный расход: <strong className="text-orange-400 font-mono">1,73 кг/м²</strong> (технологические потери учтены).
-              Фасовка: фирменные вёдра по <strong className="text-slate-200">12,5 кг</strong>.
-            </p>
+            <div className="text-sm text-slate-400 mt-1 space-y-1">
+              <div>
+                Толщина сухого слоя: <strong className="text-slate-200">0,72 мм</strong>.
+                {" "}Нормативный расход: <strong className="text-orange-400 font-mono">1,73 кг/м²</strong> (технологические потери учтены).
+              </div>
+              <div className="text-slate-300">
+                Фасовка: фирменные вёдра по <strong className="text-orange-400 font-mono">12,5 кг</strong>.
+              </div>
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700/60 flex items-center">

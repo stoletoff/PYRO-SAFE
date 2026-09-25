@@ -199,11 +199,15 @@ ${cablesText || "  (Кабели не указаны)"}
             <h2 className="text-2xl font-bold text-white tracking-tight">
               Кабельные проходки универсальной системы UNIVERSALSCHOTT
             </h2>
-            <p className="text-sm text-slate-400 mt-1 max-w-3xl">
-              Комплексный расчет сертифицированной проходки (минплита, базальтовая минвата, FLAMMOPLAST KS 1, мастика KS 3, лак SP-2).
-              Нормативные классы огнестойкости: <strong className="text-slate-200">EI 60</strong> (1 слой) и{" "}
-              <strong className="text-slate-200">EI 180</strong> (2 слоя).
-            </p>
+            <div className="text-sm text-slate-400 mt-1 space-y-1">
+              <div>
+                Комплексный расчет сертифицированной проходки (минплита, базальтовая минвата, FLAMMOPLAST KS 1, мастика KS 3, лак SP-2).
+              </div>
+              <div className="text-slate-300">
+                Нормативные классы огнестойкости: <strong className="text-orange-400 font-mono">EI 60</strong> (1 слой) и{" "}
+                <strong className="text-red-400 font-mono">EI 180</strong> (2 слоя).
+              </div>
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-950/80 text-red-300 border border-red-800/50 flex items-center">
