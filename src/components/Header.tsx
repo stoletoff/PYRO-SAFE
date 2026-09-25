@@ -33,7 +33,7 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
                 </span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">
-                Инженерный калькулятор расхода огнезащитных материалов (Германия)
+                Инженерный калькулятор расхода огнезащитных материалов
               </p>
             </div>
           </div>
