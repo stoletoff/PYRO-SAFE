@@ -107,7 +107,7 @@ export function ProjectSummary({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2 text-xs font-mono text-amber-400 uppercase tracking-wider mb-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
               Сводная ведомость объекта
             </div>
             <h2 className="text-2xl font-bold text-white tracking-tight">

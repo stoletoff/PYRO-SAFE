@@ -192,7 +192,7 @@ ${cablesText || "  (Кабели не указаны)"}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2 text-xs font-mono text-red-400 uppercase tracking-wider mb-2">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-red-500" />
               UNIVERSALSCHOTT • svt Brandschutz
             </div>
             <h2 className="text-2xl font-bold text-white tracking-tight">
@@ -634,7 +634,7 @@ ${cablesText || "  (Кабели не указаны)"}
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center">
                 {result.isBlocked ? (
-                  <AlertTriangle className="w-4 h-4 text-red-400 mr-1.5 animate-bounce" />
+                  <AlertTriangle className="w-4 h-4 text-red-400 mr-1.5" />
                 ) : (
                   <CheckCircle className="w-4 h-4 text-emerald-400 mr-1.5" />
                 )}
@@ -669,7 +669,7 @@ ${cablesText || "  (Кабели не указаны)"}
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
                   result.isBlocked
-                    ? "bg-red-600 animate-pulse"
+                    ? "bg-red-600"
                     : result.fillRatioPercent > 45
                     ? "bg-amber-500"
                     : "bg-emerald-500"
@@ -907,7 +907,7 @@ ${cablesText || "  (Кабели не указаны)"}
                 </div>
 
                 {addedToast && (
-                  <div className="p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 text-xs text-center flex items-center justify-center animate-fadeIn">
+                  <div className="p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 text-xs text-center flex items-center justify-center">
                     <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
                     Проходка успешно добавлена в сводную ведомость проекта!
                   </div>

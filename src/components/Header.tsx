@@ -21,15 +21,12 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
           {/* Logo & Branding */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 via-orange-600 to-red-600 shadow-lg shadow-orange-950/50">
-              <Flame className="w-7 h-7 text-white animate-pulse" />
+              <Flame className="w-7 h-7 text-white" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-2xl font-black tracking-tight text-white font-mono">
-                  PYRO-SAFE<span className="text-orange-500 font-sans text-xl">®</span>
-                </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-orange-950/80 text-orange-400 border border-orange-800/50">
-                  svt Brandschutz
+                  FRC CALCULATION
                 </span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">
@@ -42,11 +39,10 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
           <div className="flex items-center space-x-2 sm:space-x-3 no-print">
             <button
               onClick={() => setActiveTab("reference")}
-              className={`inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                activeTab === "reference"
-                  ? "bg-slate-800 text-orange-400 border border-orange-500/30"
-                  : "bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800"
-              }`}
+              className={`inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-all ${activeTab === "reference"
+                ? "bg-slate-800 text-orange-400 border border-orange-500/30"
+                : "bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800"
+                }`}
             >
               <BookOpen className="w-4 h-4 mr-1.5" />
               <span className="hidden md:inline">Техрегламент & Нормативы</span>
@@ -55,11 +51,10 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
 
             <button
               onClick={() => setActiveTab("summary")}
-              className={`relative inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                activeTab === "summary"
-                  ? "bg-orange-600 text-white shadow-md shadow-orange-900/40"
-                  : "bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800"
-              }`}
+              className={`relative inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-all ${activeTab === "summary"
+                ? "bg-orange-600 text-white shadow-md shadow-orange-900/40"
+                : "bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800"
+                }`}
             >
               <Layers className="w-4 h-4 mr-1.5" />
               <span>Спецификация</span>
@@ -85,11 +80,10 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
         <div className="flex space-x-1 sm:space-x-4 border-t border-slate-800/80 py-2 no-print overflow-x-auto">
           <button
             onClick={() => setActiveTab("cable")}
-            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-              activeTab === "cable"
-                ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-            }`}
+            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeTab === "cable"
+              ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+              }`}
           >
             <ShieldCheck className="w-4 h-4 mr-2 text-orange-500" />
             Огнезащита кабельных линий (FLAMMOPLAST KS 1)
@@ -97,11 +91,10 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
 
           <button
             onClick={() => setActiveTab("penetration")}
-            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-              activeTab === "penetration"
-                ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-            }`}
+            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeTab === "penetration"
+              ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+              }`}
           >
             <Flame className="w-4 h-4 mr-2 text-red-500" />
             Кабельные проходки (UNIVERSALSCHOTT)
@@ -109,11 +102,10 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
 
           <button
             onClick={() => setActiveTab("summary")}
-            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-              activeTab === "summary"
-                ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-            }`}
+            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeTab === "summary"
+              ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+              }`}
           >
             <Layers className="w-4 h-4 mr-2 text-amber-500" />
             Сводная ведомость проекта

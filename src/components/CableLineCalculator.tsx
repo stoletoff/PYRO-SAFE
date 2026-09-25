@@ -9,7 +9,6 @@ import {
 } from "@/lib/schemas";
 import {
   calculateCableLine,
-  CableInstallationType,
   CableLineResult,
   CONSTANTS,
 } from "@/lib/calculations";
@@ -24,56 +23,16 @@ import {
   Package,
 } from "lucide-react";
 
+import {
+  InstallationTypeSelector,
+  INSTALLATION_TYPES,
+} from "@/components/InstallationTypeSelector";
+
 interface CableLineCalculatorProps {
   onAddToProject?: (item: ProjectCableLineItem) => void;
 }
 
-const INSTALLATION_TYPES: {
-  id: CableInstallationType;
-  title: string;
-  subtitle: string;
-  formula: string;
-  dimensionLabel: string;
-  dimensionHelp: string;
-  defaultDimension: number;
-}[] = [
-  {
-    id: "single",
-    title: "Одиночный кабель",
-    subtitle: "Круглый наружный кабель",
-    formula: "S = L × π × d × N",
-    dimensionLabel: "Наружный диаметр кабеля (d), мм",
-    dimensionHelp: "Диаметр по внешней оболочке кабеля",
-    defaultDimension: 25,
-  },
-  {
-    id: "bundle",
-    title: "Кабели в пучке",
-    subtitle: "Пучок плотно связанных кабелей",
-    formula: "S = L × π × d × 1.5",
-    dimensionLabel: "Диаметр пучка кабелей (d), мм",
-    dimensionHelp: "Внешний габаритный диаметр связанного жгута/пучка",
-    defaultDimension: 60,
-  },
-  {
-    id: "tray_solid",
-    title: "Лоток с глухим дном",
-    subtitle: "Сплошной металлический короб",
-    formula: "S = L × b × 1.5",
-    dimensionLabel: "Ширина кабельного лотка (b), мм",
-    dimensionHelp: "Ширина основания лотка по габаритам",
-    defaultDimension: 300,
-  },
-  {
-    id: "tray_mesh",
-    title: "Сетчатый лоток",
-    subtitle: "Проволочный / перфорированный лоток",
-    formula: "S = L × b × 1.5 × 2",
-    dimensionLabel: "Ширина кабельного лотка (b), мм",
-    dimensionHelp: "Двусторонняя обработка лотка и кабелей",
-    defaultDimension: 300,
-  },
-];
+
 
 export function CableLineCalculator({ onAddToProject }: CableLineCalculatorProps) {
   const [copied, setCopied] = useState(false);
@@ -168,7 +127,7 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2 text-xs font-mono text-orange-400 uppercase tracking-wider mb-2">
-              <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-orange-500" />
               FLAMMOPLAST KS 1 • svt Brandschutz
             </div>
             <h2 className="text-2xl font-bold text-white tracking-tight">
@@ -201,42 +160,19 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
               name="installationType"
               control={control}
               render={({ field }) => (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {INSTALLATION_TYPES.map((type) => {
-                    const isSelected = field.value === type.id;
-                    return (
-                      <button
-                        key={type.id}
-                        type="button"
-                        onClick={() => {
-                          field.onChange(type.id);
-                          setValue("dimensionMm", type.defaultDimension);
-                        }}
-                        className={`text-left p-4 rounded-xl border transition-all relative ${
-                          isSelected
-                            ? "bg-orange-500/10 border-orange-500 shadow-md shadow-orange-950/30"
-                            : "bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40 text-slate-300"
-                        }`}
-                      >
-                        {isSelected && (
-                          <span className="absolute top-3 right-3 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                          </span>
-                        )}
-                        <div className="font-semibold text-sm text-white mb-0.5">
-                          {type.title}
-                        </div>
-                        <div className="text-xs text-slate-400 mb-2">
-                          {type.subtitle}
-                        </div>
-                        <div className="inline-block px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[11px] text-orange-300">
-                          {type.formula}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                <InstallationTypeSelector
+                  value={field.value}
+                  onChange={(newType) => {
+                    field.onChange(newType);
+                    const cfg = INSTALLATION_TYPES.find((t) => t.id === newType);
+                    if (cfg) {
+                      setValue("dimensionMm", cfg.defaultDimension, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }
+                  }}
+                />
               )}
             />
           </div>
@@ -357,7 +293,7 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
 
           {/* Cable Count (N) - only active for single cable */}
           {formValues.installationType === "single" && (
-            <div className="space-y-2 animate-fadeIn">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-semibold text-slate-200">
                   Количество одиночных кабелей (N)
@@ -578,7 +514,7 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
               </div>
 
               {addedToast && (
-                <div className="p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 text-xs text-center flex items-center justify-center animate-fadeIn">
+                <div className="p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 text-xs text-center flex items-center justify-center">
                   <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
                   Позиция успешно добавлена в сводную ведомость проекта!
                 </div>
