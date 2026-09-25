@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -26,29 +26,28 @@ import {
   Check,
   Layers,
   Droplets,
+  Search,
 } from "lucide-react";
+import {
+  CABLES_CATALOG,
+  CableSpec,
+  POPULAR_CABLES,
+} from "@/lib/cablesCatalog";
 
 interface PenetrationCalculatorProps {
   onAddToProject?: (item: ProjectPenetrationItem) => void;
 }
 
-// Популярные типовые марки кабелей для быстрого заполнения
-const TYPICAL_CABLE_PRESETS = [
-  { name: "ВВГнг-FRLS 3×1.5", diameterMm: 9.5 },
-  { name: "ВВГнг-FRLS 3×2.5", diameterMm: 10.8 },
-  { name: "ВВГнг-LS 5×4", diameterMm: 15.2 },
-  { name: "ВВГнг-FRLS 5×10", diameterMm: 19.5 },
-  { name: "АВВГнг 4×35", diameterMm: 27.0 },
-  { name: "АПвПуг 1×240", diameterMm: 38.0 },
-  { name: "Силовой 4×120", diameterMm: 46.5 },
-  { name: "Контрольный КВВГ 14×1.5", diameterMm: 16.0 },
-  { name: "Витая пара UTP Cat 5e/6", diameterMm: 6.2 },
-];
+
 
 export function PenetrationCalculator({ onAddToProject }: PenetrationCalculatorProps) {
   const [copied, setCopied] = useState(false);
   const [addedToast, setAddedToast] = useState(false);
   const [positionTitle, setPositionTitle] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<
+    "popular" | "Интеркабель" | "Южкабель" | "all"
+  >("popular");
+  const [cableSearch, setCableSearch] = useState("");
 
   const {
     control,
@@ -96,11 +95,32 @@ export function PenetrationCalculator({ onAddToProject }: PenetrationCalculatorP
     humidityGt85: Boolean(formValues.humidityGt85),
   });
 
-  const handleAddPreset = (preset: (typeof TYPICAL_CABLE_PRESETS)[0]) => {
+  const filteredCables = useMemo(() => {
+    let list = CABLES_CATALOG;
+    if (selectedFilter === "popular") {
+      list = POPULAR_CABLES;
+    } else if (selectedFilter === "Интеркабель" || selectedFilter === "Южкабель") {
+      list = CABLES_CATALOG.filter((c) => c.manufacturer === selectedFilter);
+    }
+
+    if (cableSearch.trim()) {
+      const q = cableSearch.toLowerCase().trim();
+      list = list.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.category.toLowerCase().includes(q) ||
+          c.manufacturer.toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [selectedFilter, cableSearch]);
+
+  const handleAddCableSpec = (cable: CableSpec) => {
     append({
       id: generateId("cable"),
-      name: preset.name,
-      diameterMm: preset.diameterMm,
+      name: cable.name,
+      diameterMm: cable.diameterMm,
       count: 1,
     });
   };
@@ -504,24 +524,118 @@ ${cablesText || "  (Кабели не указаны)"}
               </button>
             </div>
 
-            {/* Quick Presets Bar */}
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
-              <span className="text-[11px] text-slate-400 block font-medium">
-                Быстрое добавление типового кабеля:
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {TYPICAL_CABLE_PRESETS.map((preset) => (
+            {/* Каталог ходовых кабелей: Интеркабель и Южкабель */}
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-300 flex items-center">
+                  <Layers className="w-3.5 h-3.5 mr-1.5 text-orange-400" />
+                  Каталог ходовых кабелей:
+                </span>
+
+                {/* Фильтр по заводу-изготовителю */}
+                <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-[11px] self-start sm:self-auto">
                   <button
-                    key={preset.name}
                     type="button"
-                    onClick={() => handleAddPreset(preset)}
-                    className="text-[11px] px-2 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors"
+                    onClick={() => setSelectedFilter("popular")}
+                    className={`px-2 py-0.5 rounded transition-colors ${
+                      selectedFilter === "popular"
+                        ? "bg-orange-600 text-white font-medium"
+                        : "text-slate-400 hover:text-white"
+                    }`}
                   >
-                    + {preset.name} (Ø{preset.diameterMm}мм)
+                    ⭐ ТОП ходовых
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFilter("Интеркабель")}
+                    className={`px-2 py-0.5 rounded transition-colors ${
+                      selectedFilter === "Интеркабель"
+                        ? "bg-orange-600 text-white font-medium"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Интеркабель
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFilter("Южкабель")}
+                    className={`px-2 py-0.5 rounded transition-colors ${
+                      selectedFilter === "Южкабель"
+                        ? "bg-orange-600 text-white font-medium"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Южкабель
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFilter("all")}
+                    className={`px-2 py-0.5 rounded transition-colors ${
+                      selectedFilter === "all"
+                        ? "bg-orange-600 text-white font-medium"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Все марки
+                  </button>
+                </div>
+              </div>
+
+              {/* Поиск по марке или сечению */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+                <input
+                  type="text"
+                  value={cableSearch}
+                  onChange={(e) => setCableSearch(e.target.value)}
+                  placeholder="Поиск по марке или сечению (напр. HXH, 3x2.5, Южкабель, СПЭ, 120, КВВГ)..."
+                  className="w-full bg-slate-900/80 border border-slate-800 rounded-lg pl-8 pr-8 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-orange-500"
+                />
+                {cableSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCableSearch("")}
+                    className="absolute right-2.5 top-1.5 text-xs text-slate-400 hover:text-white p-0.5"
+                    title="Очистить поиск"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Список быстрых чипов кабелей */}
+              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                {filteredCables.length === 0 ? (
+                  <div className="text-[11px] text-slate-500 py-1">
+                    По запросу «{cableSearch}» кабелей не найдено
+                  </div>
+                ) : (
+                  filteredCables.slice(0, 20).map((cable) => (
+                    <button
+                      key={cable.id}
+                      type="button"
+                      onClick={() => handleAddCableSpec(cable)}
+                      className="group inline-flex items-center text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-orange-950/40 hover:border-orange-500/50 text-slate-300 hover:text-white border border-slate-800 transition-all text-left"
+                      title={`${cable.name} (${cable.manufacturer}) — Ø${cable.diameterMm} мм, ${cable.category}`}
+                    >
+                      <span className="font-medium mr-1.5">+ {cable.name}</span>
+                      <span className="text-[10px] font-mono text-orange-400 group-hover:text-orange-300 bg-slate-950 px-1.5 py-0.2 rounded border border-slate-800">
+                        Ø{cable.diameterMm}мм
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
+
+            {/* Datalist для автозаполнения в полях ввода строк */}
+            <datalist id="cables-catalog-datalist">
+              {CABLES_CATALOG.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.manufacturer} • Ø {c.diameterMm} мм • {c.category}
+                </option>
+              ))}
+            </datalist>
 
             {/* Cable entries table */}
             <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
@@ -549,9 +663,26 @@ ${cablesText || "  (Кабели не указаны)"}
                           render={({ field: nameField }) => (
                             <input
                               type="text"
+                              list="cables-catalog-datalist"
                               value={nameField.value || ""}
-                              onChange={nameField.onChange}
-                              placeholder="Марка кабеля (напр. ВВГнг 3х2.5)"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                nameField.onChange(val);
+                                const match = CABLES_CATALOG.find(
+                                  (c) => c.name.toLowerCase() === val.trim().toLowerCase()
+                                );
+                                if (match) {
+                                  setValue(
+                                    `cables.${index}.diameterMm`,
+                                    match.diameterMm,
+                                    {
+                                      shouldDirty: true,
+                                      shouldValidate: true,
+                                    }
+                                  );
+                                }
+                              }}
+                              placeholder="Марка кабеля (напр. (N)HXH FE180/E90 3×2.5)"
                               className="w-full bg-slate-900 border border-slate-800 focus:border-orange-500 rounded-lg px-2.5 py-1.5 text-slate-200 outline-none"
                             />
                           )}

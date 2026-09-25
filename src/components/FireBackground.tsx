@@ -2,19 +2,17 @@
 
 import React, { useEffect, useRef } from "react";
 
-interface Particle {
+interface Ember {
   x: number;
   y: number;
   radius: number;
-  baseRadius: number;
   speedY: number;
   speedX: number;
-  angle: number;
-  angularSpeed: number;
+  drift: number;
+  driftSpeed: number;
   opacity: number;
   maxOpacity: number;
-  hue: number;
-  decay: number;
+  color: string;
 }
 
 export function FireBackground() {
@@ -27,12 +25,7 @@ export function FireBackground() {
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    // Check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    let animationFrameId: number;
+    let animId: number;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
@@ -44,103 +37,88 @@ export function FireBackground() {
 
     window.addEventListener("resize", handleResize, { passive: true });
 
-    if (prefersReducedMotion) {
-      return () => {
-        window.removeEventListener("resize", handleResize);
-      };
-    }
+    // Embers palette: bright glowing fire colors
+    const colors = [
+      "255, 120, 20",  // Bright fiery orange
+      "255, 160, 40",  // Golden flame
+      "255, 80, 20",   // Deep orange-red
+      "251, 191, 36",  // Warm amber
+      "249, 115, 22",  // Flame orange
+      "239, 68, 68",   // Warm red ember
+    ];
 
-    // Number of subtle rising embers (few and lightweight)
-    const particleCount = width < 768 ? 20 : 35;
-    const particles: Particle[] = [];
+    const count = width < 768 ? 28 : 55;
+    const embers: Ember[] = [];
 
-    const createParticle = (initialRandomY = false): Particle => {
-      const baseRadius = 1 + Math.random() * 2.2;
+    const createEmber = (randomY = false): Ember => {
+      const radius = 1.2 + Math.random() * 2.5;
+      const color = colors[Math.floor(Math.random() * colors.length)];
       return {
         x: Math.random() * width,
-        y: initialRandomY ? Math.random() * height : height + Math.random() * 30,
-        radius: baseRadius,
-        baseRadius,
-        speedY: 0.35 + Math.random() * 0.65, // Gentle slow rise
-        speedX: (Math.random() - 0.5) * 0.3,
-        angle: Math.random() * Math.PI * 2,
-        angularSpeed: 0.008 + Math.random() * 0.015,
-        opacity: 0,
-        maxOpacity: 0.25 + Math.random() * 0.45, // Soft, non-distracting
-        // Warm flame palette: 15 (deep orange-red) to 42 (warm golden amber)
-        hue: 18 + Math.random() * 24,
-        decay: 0.0015 + Math.random() * 0.002,
+        y: randomY ? Math.random() * height : height + 10 + Math.random() * 40,
+        radius,
+        speedY: 0.5 + Math.random() * 1.1,
+        speedX: (Math.random() - 0.5) * 0.4,
+        drift: Math.random() * Math.PI * 2,
+        driftSpeed: 0.01 + Math.random() * 0.02,
+        opacity: randomY ? 0.2 + Math.random() * 0.6 : 0,
+        maxOpacity: 0.45 + Math.random() * 0.45, // Clearly visible glow
+        color,
       };
     };
 
-    for (let i = 0; i < particleCount; i++) {
-      particles.push(createParticle(true));
+    for (let i = 0; i < count; i++) {
+      embers.push(createEmber(true));
     }
 
     let lastTime = performance.now();
 
-    const render = (currentTime: number) => {
-      const delta = Math.min((currentTime - lastTime) / 16.66, 2.5);
-      lastTime = currentTime;
+    const loop = (time: number) => {
+      const delta = Math.min((time - lastTime) / 16.66, 2.0);
+      lastTime = time;
 
       ctx.clearRect(0, 0, width, height);
 
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
+      for (let i = 0; i < embers.length; i++) {
+        const e = embers[i];
 
-        p.angle += p.angularSpeed * delta;
-        p.x += (p.speedX + Math.sin(p.angle) * 0.4) * delta;
-        p.y -= p.speedY * delta;
+        e.drift += e.driftSpeed * delta;
+        e.x += (e.speedX + Math.sin(e.drift) * 0.6) * delta;
+        e.y -= e.speedY * delta;
 
-        // Fade in when entering from bottom, fade out as it ascends
-        const relativeY = p.y / height;
-        if (relativeY > 0.8) {
-          p.opacity = Math.min(p.maxOpacity, p.opacity + 0.02 * delta);
-        } else if (relativeY < 0.25) {
-          p.opacity = Math.max(0, p.opacity - p.decay * delta * 2.5);
+        // Fade in when rising from bottom, gentle fade out towards top
+        if (e.y > height * 0.75) {
+          e.opacity = Math.min(e.maxOpacity, e.opacity + 0.02 * delta);
+        } else if (e.y < height * 0.2) {
+          e.opacity = Math.max(0, e.opacity - 0.008 * delta);
         } else {
-          p.opacity = Math.min(p.maxOpacity, p.opacity + 0.005 * delta);
+          e.opacity = Math.min(e.maxOpacity, e.opacity + 0.005 * delta);
         }
 
-        // Draw soft glowing particle
-        if (p.opacity > 0.01) {
+        if (e.opacity > 0.02) {
           ctx.save();
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-
-          // Subtle radial glow around ember
-          const grad = ctx.createRadialGradient(
-            p.x,
-            p.y,
-            0,
-            p.x,
-            p.y,
-            p.radius * 2.5
-          );
-          grad.addColorStop(0, `hsla(${p.hue}, 95%, 65%, ${p.opacity})`);
-          grad.addColorStop(0.5, `hsla(${p.hue - 5}, 90%, 55%, ${p.opacity * 0.5})`);
-          grad.addColorStop(1, `hsla(${p.hue - 10}, 85%, 45%, 0)`);
-
-          ctx.fillStyle = grad;
-          ctx.shadowColor = `hsla(${p.hue}, 95%, 55%, ${p.opacity * 0.8})`;
-          ctx.shadowBlur = 6;
+          ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${e.color}, ${e.opacity})`;
+          ctx.shadowColor = `rgba(${e.color}, ${e.opacity * 0.95})`;
+          ctx.shadowBlur = 8;
           ctx.fill();
           ctx.restore();
         }
 
-        // Reset if offscreen or faded
-        if (p.y < -20 || p.opacity <= 0.01 && relativeY < 0.3 || p.x < -30 || p.x > width + 30) {
-          particles[i] = createParticle(false);
+        // Reset ember if it left screen or dissolved
+        if (e.y < -10 || e.opacity <= 0.01 && e.y < height * 0.3 || e.x < -20 || e.x > width + 20) {
+          embers[i] = createEmber(false);
         }
       }
 
-      animationFrameId = requestAnimationFrame(render);
+      animId = requestAnimationFrame(loop);
     };
 
-    animationFrameId = requestAnimationFrame(render);
+    animId = requestAnimationFrame(loop);
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(animId);
       window.removeEventListener("resize", handleResize);
     };
   }, []);
@@ -148,23 +126,29 @@ export function FireBackground() {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 pointer-events-none -z-10 overflow-hidden select-none"
+      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
     >
-      {/* Мягкие рассеянные огненные пятна света (Ambient Glow) */}
+      {/* 1. Глубокое огненное свечение снизу (Flame Glow at bottom) */}
       <div
-        className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[700px] sm:w-[1100px] h-[450px] rounded-full blur-[140px] opacity-20 bg-gradient-to-t from-orange-600 via-amber-600 to-transparent transition-opacity"
-      />
-      <div
-        className="absolute top-1/4 -right-48 w-[400px] sm:w-[600px] h-[500px] rounded-full blur-[160px] opacity-10 bg-gradient-to-br from-red-600/60 to-orange-500/40"
-      />
-      <div
-        className="absolute -top-32 -left-32 w-[350px] sm:w-[500px] h-[450px] rounded-full blur-[150px] opacity-10 bg-gradient-to-tr from-amber-600/50 to-orange-600/30"
+        className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[130%] h-[380px] bg-gradient-to-t from-orange-600/25 via-amber-600/15 to-transparent blur-3xl"
       />
 
-      {/* Тонкая сетка-градиент для высокотехнологичной инженерной глубины */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(249,115,22,0.06),rgba(255,255,255,0))]" />
+      {/* 2. Левое огненное пятно (Warm Red-Orange Aura) */}
+      <div
+        className="absolute -bottom-10 -left-20 w-[420px] sm:w-[550px] h-[400px] rounded-full bg-gradient-to-tr from-red-600/20 via-orange-600/15 to-transparent blur-[90px]"
+      />
 
-      {/* Canvas с нежными парящими искрами (embers) */}
+      {/* 3. Правое огненное пятно (Amber-Gold Aura) */}
+      <div
+        className="absolute -bottom-10 -right-20 w-[420px] sm:w-[550px] h-[400px] rounded-full bg-gradient-to-tl from-amber-600/20 via-orange-500/15 to-transparent blur-[90px]"
+      />
+
+      {/* 4. Верхний мягкий ореол тепла */}
+      <div
+        className="absolute -top-32 right-1/4 w-[500px] h-[280px] rounded-full bg-orange-500/10 blur-[110px]"
+      />
+
+      {/* 5. Canvas с живыми поднимающимися искрами огня (Embers) */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full block"

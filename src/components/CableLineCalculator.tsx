@@ -264,27 +264,59 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
                   )}
 
                   {/* Dimension presets tailored to type */}
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    <span className="text-xs text-slate-500 py-1 pr-1">Типовые:</span>
-                    {(formValues.installationType === "single"
-                      ? [12, 16, 20, 25, 35, 50]
-                      : formValues.installationType === "bundle"
-                      ? [30, 50, 75, 100, 120]
-                      : [100, 200, 300, 400, 500, 600]
-                    ).map((preset) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => field.onChange(preset)}
-                        className={`text-xs px-2.5 py-1 rounded-md border font-mono transition-colors ${
-                          field.value === preset
-                            ? "bg-orange-500/20 text-orange-400 border-orange-500/50"
-                            : "bg-slate-950 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800"
-                        }`}
-                      >
-                        {preset} мм
-                      </button>
-                    ))}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      <span className="text-xs text-slate-500 py-1 pr-1">Типовые:</span>
+                      {(formValues.installationType === "single"
+                        ? [12, 16, 20, 25, 35, 50]
+                        : formValues.installationType === "bundle"
+                        ? [30, 50, 75, 100, 120]
+                        : [100, 200, 300, 400, 500, 600]
+                      ).map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => field.onChange(preset)}
+                          className={`text-xs px-2.5 py-1 rounded-md border font-mono transition-colors ${
+                            field.value === preset
+                              ? "bg-orange-500/20 text-orange-400 border-orange-500/50"
+                              : "bg-slate-950 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800"
+                          }`}
+                        >
+                          {preset} мм
+                        </button>
+                      ))}
+                    </div>
+
+                    {formValues.installationType === "single" && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        <span className="text-[11px] text-slate-500 py-0.5 pr-1">
+                          Интеркабель / Южкабель:
+                        </span>
+                        {[
+                          { name: "(N)HXH 3×2.5", d: 13.0, m: "Интеркабель" },
+                          { name: "(N)HXH 5×10", d: 22.0, m: "Интеркабель" },
+                          { name: "ВВГнг-LS 4×16", d: 21.0, m: "Южкабель" },
+                          { name: "АВВГ 4×35", d: 25.5, m: "Южкабель" },
+                          { name: "ВБбШвнг 4×70", d: 37.5, m: "Южкабель" },
+                          { name: "АПвЭгаП 1×95", d: 29.5, m: "Южкабель" },
+                        ].map((c) => (
+                          <button
+                            key={c.name}
+                            type="button"
+                            onClick={() => field.onChange(c.d)}
+                            title={`${c.name} (${c.m}) — диаметр ${c.d} мм`}
+                            className={`text-[11px] px-2 py-0.5 rounded border transition-colors ${
+                              field.value === c.d
+                                ? "bg-orange-500/20 text-orange-300 border-orange-500/50"
+                                : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+                            }`}
+                          >
+                            {c.name} (Ø{c.d})
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
