@@ -16,7 +16,6 @@ import {
 import { ProjectCableLineItem } from "@/lib/projectStore";
 import { generateId, getTimestamp } from "@/lib/utils";
 import {
-  ShieldCheck,
   Check,
   Copy,
   PlusCircle,
@@ -184,12 +183,6 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
                 Фасовка: фирменные вёдра по <strong className="text-orange-400 font-mono">12,5 кг</strong>.
               </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700/60 flex items-center">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 mr-1.5" />
-              Сертификат соответствия
-            </span>
           </div>
         </div>
       </div>

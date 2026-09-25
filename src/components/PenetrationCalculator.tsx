@@ -17,7 +17,6 @@ import { ProjectPenetrationItem } from "@/lib/projectStore";
 import { generateId, getTimestamp } from "@/lib/utils";
 import {
   AlertTriangle,
-  Flame,
   Plus,
   Trash2,
   Lock,
@@ -208,12 +207,6 @@ ${cablesText || "  (Кабели не указаны)"}
                 <strong className="text-red-400 font-mono">EI 180</strong> (2 слоя).
               </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-950/80 text-red-300 border border-red-800/50 flex items-center">
-              <Flame className="w-4 h-4 text-red-400 mr-1.5" />
-              Стандарт EN 1366-3
-            </span>
           </div>
         </div>
       </div>
