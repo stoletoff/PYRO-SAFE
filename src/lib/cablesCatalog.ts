@@ -288,10 +288,10 @@ export const CABLES_CATALOG: CableSpec[] = [
   /* =========================================================
      ЮЖКАБЕЛЬ (ХАРЬКОВ) - СИЛОВЫЕ, СПЭ, БРОНИРОВАННЫЕ, КОНТРОЛЬНЫЕ
      ========================================================= */
-  // Силовые медные ВВГнг-LS / ВВГнгд (Южкабель)
+  // Силовые медные ВВГнгд (Южкабель)
   {
-    id: "yk-vvgng-3x1.5",
-    name: "ВВГнг-LS 3×1.5 (Южкабель)",
+    id: "yk-vvgngd-3x1.5",
+    name: "ВВГнгд 3×1.5 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 9.5,
@@ -299,8 +299,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-vvgng-3x2.5",
-    name: "ВВГнг-LS 3×2.5 (Южкабель)",
+    id: "yk-vvgngd-3x2.5",
+    name: "ВВГнгд 3×2.5 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 10.8,
@@ -308,8 +308,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-vvgng-4x4",
-    name: "ВВГнг-LS 4×4 (Южкабель)",
+    id: "yk-vvgngd-4x4",
+    name: "ВВГнгд 4×4 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 14.0,
@@ -317,8 +317,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: false,
   },
   {
-    id: "yk-vvgng-4x10",
-    name: "ВВГнг-LS 4×10 (Южкабель)",
+    id: "yk-vvgngd-4x10",
+    name: "ВВГнгд 4×10 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 18.0,
@@ -326,8 +326,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-vvgng-4x16",
-    name: "ВВГнг-LS 4×16 (Южкабель)",
+    id: "yk-vvgngd-4x16",
+    name: "ВВГнгд 4×16 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 21.0,
@@ -335,8 +335,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-vvgng-4x25",
-    name: "ВВГнг-LS 4×25 (Южкабель)",
+    id: "yk-vvgngd-4x25",
+    name: "ВВГнгд 4×25 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 24.5,
@@ -344,8 +344,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: false,
   },
   {
-    id: "yk-vvgng-4x35",
-    name: "ВВГнг-LS 4×35 (Южкабель)",
+    id: "yk-vvgngd-4x35",
+    name: "ВВГнгд 4×35 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 27.5,
@@ -353,8 +353,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-vvgng-4x50",
-    name: "ВВГнг-LS 4×50 (Южкабель)",
+    id: "yk-vvgngd-4x50",
+    name: "ВВГнгд 4×50 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 32.0,
@@ -362,8 +362,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-vvgng-4x70",
-    name: "ВВГнг-LS 4×70 (Южкабель)",
+    id: "yk-vvgngd-4x70",
+    name: "ВВГнгд 4×70 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 36.5,
@@ -371,8 +371,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: false,
   },
   {
-    id: "yk-vvgng-4x95",
-    name: "ВВГнг-LS 4×95 (Южкабель)",
+    id: "yk-vvgngd-4x95",
+    name: "ВВГнгд 4×95 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 41.5,
@@ -380,8 +380,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-vvgng-4x120",
-    name: "ВВГнг-LS 4×120 (Южкабель)",
+    id: "yk-vvgngd-4x120",
+    name: "ВВГнгд 4×120 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 45.0,
@@ -389,8 +389,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-vvgng-4x185",
-    name: "ВВГнг-LS 4×185 (Южкабель)",
+    id: "yk-vvgngd-4x185",
+    name: "ВВГнгд 4×185 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 54.5,
@@ -398,8 +398,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: false,
   },
   {
-    id: "yk-vvgng-4x240",
-    name: "ВВГнг-LS 4×240 (Южкабель)",
+    id: "yk-vvgngd-4x240",
+    name: "ВВГнгд 4×240 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые медные (0.66/1 кВ)",
     diameterMm: 61.5,
@@ -407,10 +407,10 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
 
-  // Силовые алюминиевые АВВГнг-LS (Южкабель)
+  // Силовые алюминиевые АВВГнгд (Южкабель)
   {
-    id: "yk-avvgng-4x16",
-    name: "АВВГнг-LS 4×16 (Южкабель)",
+    id: "yk-avvgngd-4x16",
+    name: "АВВГнгд 4×16 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые алюминиевые",
     diameterMm: 19.5,
@@ -418,8 +418,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: false,
   },
   {
-    id: "yk-avvgng-4x35",
-    name: "АВВГнг-LS 4×35 (Южкабель)",
+    id: "yk-avvgngd-4x35",
+    name: "АВВГнгд 4×35 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые алюминиевые",
     diameterMm: 25.5,
@@ -427,8 +427,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-avvgng-4x70",
-    name: "АВВГнг-LS 4×70 (Южкабель)",
+    id: "yk-avvgngd-4x70",
+    name: "АВВГнгд 4×70 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые алюминиевые",
     diameterMm: 33.5,
@@ -436,8 +436,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-avvgng-4x95",
-    name: "АВВГнг-LS 4×95 (Южкабель)",
+    id: "yk-avvgngd-4x95",
+    name: "АВВГнгд 4×95 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые алюминиевые",
     diameterMm: 38.0,
@@ -445,8 +445,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: false,
   },
   {
-    id: "yk-avvgng-4x120",
-    name: "АВВГнг-LS 4×120 (Южкабель)",
+    id: "yk-avvgngd-4x120",
+    name: "АВВГнгд 4×120 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые алюминиевые",
     diameterMm: 41.5,
@@ -454,8 +454,8 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
   {
-    id: "yk-avvgng-4x240",
-    name: "АВВГнг-LS 4×240 (Южкабель)",
+    id: "yk-avvgngd-4x240",
+    name: "АВВГнгд 4×240 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Силовые алюминиевые",
     diameterMm: 56.5,
@@ -463,10 +463,10 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: true,
   },
 
-  // Бронированные кабели ВБбШвнг / АВБбШвнг (Южкабель)
+  // Бронированные кабели ВБбШвнгд / АВБбШвнгд (Южкабель)
   {
     id: "yk-vbbshv-4x16",
-    name: "ВБбШвнг 4×16 (Южкабель)",
+    name: "ВБбШвнгд 4×16 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Бронированные",
     diameterMm: 22.5,
@@ -475,7 +475,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-vbbshv-4x35",
-    name: "ВБбШвнг 4×35 (Южкабель)",
+    name: "ВБбШвнгд 4×35 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Бронированные",
     diameterMm: 29.5,
@@ -484,7 +484,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-vbbshv-4x70",
-    name: "ВБбШвнг 4×70 (Южкабель)",
+    name: "ВБбШвнгд 4×70 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Бронированные",
     diameterMm: 37.5,
@@ -493,7 +493,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-vbbshv-4x120",
-    name: "ВБбШвнг 4×120 (Южкабель)",
+    name: "ВБбШвнгд 4×120 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Бронированные",
     diameterMm: 46.5,
@@ -502,7 +502,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-avbbshv-4x150",
-    name: "АВБбШвнг 4×150 (Южкабель)",
+    name: "АВБбШвнгд 4×150 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Бронированные",
     diameterMm: 48.0,
@@ -511,7 +511,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-avbbshv-4x240",
-    name: "АВБбШвнг 4×240 (Южкабель)",
+    name: "АВБбШвнгд 4×240 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Бронированные",
     diameterMm: 59.0,
@@ -566,10 +566,10 @@ export const CABLES_CATALOG: CableSpec[] = [
     isPopular: false,
   },
 
-  // Контрольные кабели КВВГнг-LS (Южкабель)
+  // Контрольные кабели КВВГнгд (Южкабель)
   {
     id: "yk-kvvg-4x1.5",
-    name: "КВВГнг-LS 4×1.5 (Южкабель)",
+    name: "КВВГнгд 4×1.5 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Контрольные",
     diameterMm: 9.8,
@@ -578,7 +578,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-kvvg-7x1.5",
-    name: "КВВГнг-LS 7×1.5 (Южкабель)",
+    name: "КВВГнгд 7×1.5 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Контрольные",
     diameterMm: 11.5,
@@ -587,7 +587,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-kvvg-10x1.5",
-    name: "КВВГнг-LS 10×1.5 (Южкабель)",
+    name: "КВВГнгд 10×1.5 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Контрольные",
     diameterMm: 13.5,
@@ -596,7 +596,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-kvvg-14x1.5",
-    name: "КВВГнг-LS 14×1.5 (Южкабель)",
+    name: "КВВГнгд 14×1.5 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Контрольные",
     diameterMm: 15.0,
@@ -605,7 +605,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-kvvg-19x1.5",
-    name: "КВВГнг-LS 19×1.5 (Южкабель)",
+    name: "КВВГнгд 19×1.5 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Контрольные",
     diameterMm: 16.8,
@@ -614,7 +614,7 @@ export const CABLES_CATALOG: CableSpec[] = [
   },
   {
     id: "yk-kvvg-27x1.5",
-    name: "КВВГнг-LS 27×1.5 (Южкабель)",
+    name: "КВВГнгд 27×1.5 (Южкабель)",
     manufacturer: "Южкабель",
     category: "Контрольные",
     diameterMm: 20.0,

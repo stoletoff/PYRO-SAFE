@@ -64,8 +64,8 @@ export function PenetrationCalculator({ onAddToProject }: PenetrationCalculatorP
       applicationMethod: "brush",
       humidityGt85: false,
       cables: [
-        { id: "c1", name: "ВВГнг-FRLS 3×2.5", diameterMm: 11, count: 8 },
-        { id: "c2", name: "ВВГнг-LS 5×10", diameterMm: 20, count: 4 },
+        { id: "c1", name: "(N)HXH FE180/E90 3×2.5", diameterMm: 13, count: 8 },
+        { id: "c2", name: "ВВГнгд 5×10", diameterMm: 19, count: 4 },
       ],
     },
     mode: "onChange",

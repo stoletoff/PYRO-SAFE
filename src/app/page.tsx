@@ -87,7 +87,7 @@ export default function Home() {
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
             <div className="flex items-center space-x-1.5">
               <span className="text-slate-400">Provided by:</span>
-              <span className="font-semibold text-slate-200 font-mono">Alexander Afanasiev</span>
+              <span className="font-semibold text-slate-200 font-mono">2026 © Alexander Afanasiev</span>
             </div>
             <span className="text-slate-700 hidden sm:inline">•</span>
             <div className="flex items-center space-x-1.5">
