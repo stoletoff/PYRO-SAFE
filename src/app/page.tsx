@@ -6,6 +6,7 @@ import { CableLineCalculator } from "@/components/CableLineCalculator";
 import { PenetrationCalculator } from "@/components/PenetrationCalculator";
 import { ProjectSummary } from "@/components/ProjectSummary";
 import { TechnicalReference } from "@/components/TechnicalReference";
+import { FireBackground } from "@/components/FireBackground";
 import {
   projectStore,
   useProjectItems,
@@ -34,7 +35,10 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-orange-500 selection:text-white">
+    <div className="relative min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-orange-500 selection:text-white">
+      {/* Animated Lightweight Fire Background */}
+      <FireBackground />
+
       {/* Top Header */}
       <Header
         activeTab={activeTab}
