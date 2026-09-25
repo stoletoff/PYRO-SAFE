@@ -187,7 +187,7 @@ ${cablesText || "  (Кабели не указаны)"}
   return (
     <div className="space-y-8">
       {/* Intro banner */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 relative overflow-hidden backdrop-blur-sm">
+      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm">
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
@@ -195,10 +195,10 @@ ${cablesText || "  (Кабели не указаны)"}
               <span className="w-2 h-2 rounded-full bg-red-500" />
               UNIVERSALSCHOTT • svt Brandschutz
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               Кабельные проходки универсальной системы UNIVERSALSCHOTT
             </h2>
-            <div className="text-sm text-slate-400 mt-1 space-y-1">
+            <div className="text-xs sm:text-sm text-slate-400 mt-1 space-y-1">
               <div>
                 Комплексный расчет сертифицированной проходки (минплита, базальтовая минвата, FLAMMOPLAST KS 1, мастика KS 3, лак SP-2).
               </div>
@@ -213,7 +213,7 @@ ${cablesText || "  (Кабели не указаны)"}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* FORM PANEL (7 cols) */}
-        <div className="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-xl space-y-7">
+        <div className="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-7 shadow-xl space-y-6 sm:space-y-7">
           {/* Penetration Geometry */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">

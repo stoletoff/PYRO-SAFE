@@ -122,7 +122,7 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
   return (
     <div className="space-y-8">
       {/* Intro banner */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 relative overflow-hidden backdrop-blur-sm">
+      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm">
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
@@ -130,10 +130,10 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
               <span className="w-2 h-2 rounded-full bg-orange-500" />
               FLAMMOPLAST KS 1 • svt Brandschutz
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               Огнезащита кабельных линий составом FLAMMOPLAST KS 1
             </h2>
-            <div className="text-sm text-slate-400 mt-1 space-y-1">
+            <div className="text-xs sm:text-sm text-slate-400 mt-1 space-y-1">
               <div>
                 Толщина сухого слоя: <strong className="text-slate-200">0,72 мм</strong>.
                 {" "}Нормативный расход: <strong className="text-orange-400 font-mono">1,73 кг/м²</strong> (технологические потери учтены).
@@ -148,7 +148,7 @@ FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* FORM PANEL (7 cols) */}
-        <div className="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-xl space-y-7">
+        <div className="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-7 shadow-xl space-y-6 sm:space-y-7">
           {/* Type Selection */}
           <div className="space-y-3">
             <label className="text-sm font-semibold text-slate-200 flex items-center justify-between">
