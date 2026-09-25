@@ -278,10 +278,10 @@ export function InstallationTypeSelector({
                 : "bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40 text-slate-300"
             }`}
           >
-            {/* Статичный индикатор выбора без мерцания */}
+            {/* Статичный индикатор выбора в правом нижнем углу */}
             {isSelected && (
-              <span className="absolute top-3 right-3 flex h-2 w-2">
-                <span className="rounded-full h-2 w-2 bg-orange-500" />
+              <span className="absolute bottom-3.5 right-3.5 flex h-2.5 w-2.5">
+                <span className="rounded-full h-2.5 w-2.5 bg-orange-500 shadow-sm shadow-orange-500/50" />
               </span>
             )}
 
