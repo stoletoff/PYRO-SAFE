@@ -3,9 +3,17 @@
 import React from "react";
 import { Flame, ShieldCheck, Printer, BookOpen, Layers } from "lucide-react";
 
+export type TabType =
+  | "cable"
+  | "penetration"
+  | "cable_flammotect"
+  | "penetration_flammotect"
+  | "summary"
+  | "reference";
+
 interface HeaderProps {
-  activeTab: "cable" | "penetration" | "summary" | "reference";
-  setActiveTab: (tab: "cable" | "penetration" | "summary" | "reference") => void;
+  activeTab: TabType;
+  setActiveTab: (tab: TabType) => void;
   summaryCount: number;
 }
 
@@ -81,44 +89,81 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
 
         {/* Navigation Tabs Bar */}
         <div className="w-full max-w-full overflow-x-auto no-scrollbar border-t border-slate-800/80 py-2 no-print">
-          <div className="flex space-x-1 sm:space-x-3 w-max min-w-full">
+          <div className="flex space-x-1 sm:space-x-2 w-max min-w-full">
+            {/* KS 1 Cable */}
             <button
               onClick={() => setActiveTab("cable")}
-              className={`flex items-center px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+              className={`flex items-center px-3 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
                 activeTab === "cable"
                   ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
               }`}
             >
-              <ShieldCheck className="w-4 h-4 mr-1.5 sm:mr-2 text-orange-500 shrink-0" />
-              <span className="hidden sm:inline">Огнезащита кабельных линий (FLAMMOPLAST KS 1)</span>
-              <span className="sm:hidden">Кабельные линии</span>
+              <ShieldCheck className="w-4 h-4 mr-1.5 text-orange-500 shrink-0" />
+              <span className="hidden sm:inline">Кабели (KS 1)</span>
+              <span className="sm:hidden">Кабели KS 1</span>
             </button>
 
+            {/* UNIVERSALSCHOTT Penetration */}
             <button
               onClick={() => setActiveTab("penetration")}
-              className={`flex items-center px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+              className={`flex items-center px-3 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
                 activeTab === "penetration"
                   ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
               }`}
             >
-              <Flame className="w-4 h-4 mr-1.5 sm:mr-2 text-red-500 shrink-0" />
-              <span className="hidden sm:inline">Кабельные проходки (UNIVERSALSCHOTT)</span>
-              <span className="sm:hidden">Кабельные проходки</span>
+              <Flame className="w-4 h-4 mr-1.5 text-red-500 shrink-0" />
+              <span className="hidden sm:inline">Проходки (UNIVERSALSCHOTT)</span>
+              <span className="sm:hidden">Проходки KS 1</span>
             </button>
 
+            {/* FLAMMOTECT-A Cable */}
+            <button
+              onClick={() => setActiveTab("cable_flammotect")}
+              className={`flex items-center px-3 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+                activeTab === "cable_flammotect"
+                  ? "bg-teal-500/15 text-teal-300 border border-teal-500/40 shadow-sm shadow-teal-950"
+                  : "text-slate-400 hover:text-teal-200 hover:bg-slate-900"
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 mr-1.5 text-teal-400 shrink-0" />
+              <span className="hidden sm:inline">Кабели (FLAMMOTECT-A)</span>
+              <span className="sm:hidden">Кабели FLAMMOTECT</span>
+              <span className="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-teal-950 text-teal-300 border border-teal-800/40 hidden md:inline">
+                2022
+              </span>
+            </button>
+
+            {/* FLAMMOTECT-A Double Layer Penetration */}
+            <button
+              onClick={() => setActiveTab("penetration_flammotect")}
+              className={`flex items-center px-3 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+                activeTab === "penetration_flammotect"
+                  ? "bg-rose-500/15 text-rose-300 border border-rose-500/40 shadow-sm shadow-rose-950"
+                  : "text-slate-400 hover:text-rose-200 hover:bg-slate-900"
+              }`}
+            >
+              <Flame className="w-4 h-4 mr-1.5 text-rose-500 shrink-0" />
+              <span className="hidden sm:inline">Проходки Double Layer (FLAMMOTECT)</span>
+              <span className="sm:hidden">Проходки Double Layer</span>
+              <span className="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-rose-950 text-rose-300 border border-rose-800/40 hidden md:inline">
+                EI 120
+              </span>
+            </button>
+
+            {/* Summary Tab */}
             <button
               onClick={() => setActiveTab("summary")}
-              className={`flex items-center px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+              className={`flex items-center px-3 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
                 activeTab === "summary"
                   ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
               }`}
             >
-              <Layers className="w-4 h-4 mr-1.5 sm:mr-2 text-amber-500 shrink-0" />
-              <span className="hidden sm:inline">Сводная ведомость проекта</span>
-              <span className="sm:hidden">Сводная ведомость</span>
+              <Layers className="w-4 h-4 mr-1.5 text-amber-500 shrink-0" />
+              <span className="hidden sm:inline">Сводная спецификация</span>
+              <span className="sm:hidden">Спецификация</span>
               {summaryCount > 0 && (
                 <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[11px] bg-slate-800 text-orange-300 font-mono">
                   {summaryCount}

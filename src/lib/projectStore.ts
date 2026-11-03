@@ -1,7 +1,16 @@
 import { useSyncExternalStore } from "react";
-import { CableLineResult, PenetrationResult } from "./calculations";
+import {
+  CableLineResult,
+  PenetrationResult,
+  FlammotectCableResult,
+  FlammotectPenetrationResult,
+} from "./calculations";
 
-export type ProjectItemType = "cable_line" | "penetration";
+export type ProjectItemType =
+  | "cable_line"
+  | "penetration"
+  | "cable_flammotect"
+  | "penetration_flammotect";
 
 export interface ProjectCableLineItem {
   id: string;
@@ -34,15 +43,56 @@ export interface ProjectPenetrationItem {
   result: PenetrationResult;
 }
 
-export type ProjectItem = ProjectCableLineItem | ProjectPenetrationItem;
+export interface ProjectFlammotectCableItem {
+  id: string;
+  type: "cable_flammotect";
+  title: string;
+  timestamp: number;
+  details: {
+    installationTypeName: string;
+    lengthM: number;
+    dimensionMm: number;
+    cableCount: number;
+    shelvesCount: number;
+    dryFilmThicknessMm: number;
+    applicationMethodName: string;
+  };
+  result: FlammotectCableResult;
+}
+
+export interface ProjectFlammotectPenetrationItem {
+  id: string;
+  type: "penetration_flammotect";
+  title: string;
+  timestamp: number;
+  details: {
+    shapeName: string;
+    dimensionsText: string;
+    penetrantsSummary: string;
+    applicationMethodName: string;
+    locationTypeName: string;
+  };
+  result: FlammotectPenetrationResult;
+}
+
+export type ProjectItem =
+  | ProjectCableLineItem
+  | ProjectPenetrationItem
+  | ProjectFlammotectCableItem
+  | ProjectFlammotectPenetrationItem;
 
 export interface ProjectConsolidatedTotals {
   totalKs1Kg: number;
   totalKs1Buckets: number;
   totalKs3Kg: number;
   totalSp2Kg: number;
+  totalFlammotectCoatingKg: number;
+  totalFlammotectCoatingBuckets: number;
+  totalFlammotectFillerKg: number;
+  totalFlammotectFillerBuckets: number;
   totalBoardM2: number;
   totalWoolKg: number;
+  totalDgCrBsMeters: number;
   totalPositions: number;
 }
 
@@ -50,8 +100,11 @@ export function calculateProjectTotals(items: ProjectItem[]): ProjectConsolidate
   let totalKs1Kg = 0;
   let totalKs3Kg = 0;
   let totalSp2Kg = 0;
+  let totalFlammotectCoatingKg = 0;
+  let totalFlammotectFillerKg = 0;
   let totalBoardM2 = 0;
   let totalWoolKg = 0;
+  let totalDgCrBsMeters = 0;
 
   for (const item of items) {
     if (item.type === "cable_line") {
@@ -63,18 +116,33 @@ export function calculateProjectTotals(items: ProjectItem[]): ProjectConsolidate
       totalSp2Kg += item.result.sp2MassKg;
       totalBoardM2 += item.result.boardAreaM2;
       totalWoolKg += item.result.mineralWoolMassKg;
+    } else if (item.type === "cable_flammotect") {
+      totalFlammotectCoatingKg += item.result.flammotectMassKg;
+    } else if (item.type === "penetration_flammotect" && !item.result.isBlocked) {
+      totalFlammotectCoatingKg += item.result.coatingMassKg;
+      totalFlammotectFillerKg += item.result.fillerMassKg;
+      totalBoardM2 += item.result.boardAreaM2;
+      totalWoolKg += item.result.looseWoolMassKg;
+      totalDgCrBsMeters += item.result.dgCrBsMeters;
     }
   }
 
   const totalKs1Buckets = Math.ceil(totalKs1Kg / 12.5);
+  const totalFlammotectCoatingBuckets = Math.ceil(totalFlammotectCoatingKg / 12.5);
+  const totalFlammotectFillerBuckets = Math.ceil(totalFlammotectFillerKg / 12.5);
 
   return {
     totalKs1Kg: Math.round(totalKs1Kg * 100) / 100,
     totalKs1Buckets,
     totalKs3Kg: Math.round(totalKs3Kg * 100) / 100,
     totalSp2Kg: Math.round(totalSp2Kg * 100) / 100,
+    totalFlammotectCoatingKg: Math.round(totalFlammotectCoatingKg * 100) / 100,
+    totalFlammotectCoatingBuckets,
+    totalFlammotectFillerKg: Math.round(totalFlammotectFillerKg * 100) / 100,
+    totalFlammotectFillerBuckets,
     totalBoardM2: Math.round(totalBoardM2 * 100) / 100,
     totalWoolKg: Math.round(totalWoolKg * 100) / 100,
+    totalDgCrBsMeters: Math.round(totalDgCrBsMeters * 100) / 100,
     totalPositions: items.length,
   };
 }

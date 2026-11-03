@@ -325,6 +325,382 @@ export function calculatePenetration(input: PenetrationInput): PenetrationResult
 }
 
 // ==========================================
+// МОДУЛЬ 3: ОГНЕЗАЩИТА КАБЕЛЬНЫХ ЛИНИЙ (PYRO-SAFE FLAMMOTECT-A)
+// ==========================================
+
+export const FLAMMOTECT_CONSTANTS = {
+  /** Плотность состава в жидком состоянии (г/см³, среднее по паспорту 1.34 - 1.48) */
+  DENSITY_G_CM3: 1.40,
+  /** Вес стандартного пластикового ведра FLAMMOTECT-A (кг) */
+  BUCKET_WEIGHT_KG: 12.5,
+  /** Отношение мокрого слоя к сухому WFT/DFT: 0.9 мм мокрого = 0.5 мм сухого (1.8) */
+  WET_TO_DRY_RATIO: 1.8,
+  /** Базовый удельный расход при сухом слое 0.5 мм: 0.9 л/м² * 1.4 кг/л = 1.26 кг/м² */
+  BASE_RATE_05MM_KG_M2: 1.26,
+  /** Базовый удельный расход при сухом слое 1.0 мм: 1.8 л/м² * 1.4 кг/л = 2.52 кг/м² */
+  BASE_RATE_10MM_KG_M2: 2.52,
+} as const;
+
+export const FLAMMOTECT_APPLICATION_LOSSES = {
+  brush_5: { label: "Кисть / валик (мин. потери +5%)", factor: 1.05 },
+  brush_10: { label: "Кисть / валик (средние потери +10%)", factor: 1.10 },
+  sprayer_30: { label: "Аппарат безвоздушного распыления ВД (+30%)", factor: 1.30 },
+} as const;
+
+export type FlammotectApplicationMethod = keyof typeof FLAMMOTECT_APPLICATION_LOSSES;
+
+export interface FlammotectCableInput {
+  installationType: CableInstallationType;
+  /** Длина кабельной трассы (L) в метрах */
+  lengthM: number;
+  /** Внешний диаметр кабеля/пучка (d) или ширина лотка (b) в мм */
+  dimensionMm: number;
+  /** Количество кабелей (для одиночной прокладки) */
+  cableCount?: number;
+  /** Количество полок/ярусов в коробе (по п. 3.2.1 регламента) */
+  shelvesCount?: number;
+  /** Целевая толщина сухого слоя (мм), по умолчанию 0.5 мм или 1.0 мм */
+  dryFilmThicknessMm: number;
+  /** Способ нанесения */
+  applicationMethod: FlammotectApplicationMethod;
+  /** Пользовательская норма расхода (кг/м²), если задана вручную */
+  customRateKgM2?: number;
+}
+
+export interface FlammotectCableResult {
+  /** Расчетная площадь защищаемой поверхности (м²) */
+  areaM2: number;
+  /** Требуемая толщина мокрого слоя WFT (мм) для контроля гребенкой на объекте */
+  wetFilmThicknessMm: number;
+  /** Базовый удельный расход (кг/м²) без технологических потерь */
+  baseRateKgM2: number;
+  /** Итоговый удельный расход с учетом потерь (кг/м²) */
+  effectiveRateKgM2: number;
+  /** Общая масса покрытия FLAMMOTECT-A (кг) */
+  flammotectMassKg: number;
+  /** Количество целых ведер FLAMMOTECT-A (по 12.5 кг) */
+  flammotectBucketsCount: number;
+  /** Текстовая расшифровка формулы расчета */
+  formulaExplanation: string;
+  /** Рекомендованное минимальное количество точек замера толщины */
+  recommendedMeasurementsCount: number;
+}
+
+/**
+ * Расчет расхода огнезащитного состава PYRO-SAFE FLAMMOTECT-A для кабельных линий
+ * Регламент ТОВ «ІПВК «СПЕЦЗАХИСТ» / svt Products GmbH (2022)
+ */
+export function calculateFlammotectCableLine(input: FlammotectCableInput): FlammotectCableResult {
+  const {
+    installationType,
+    lengthM,
+    dimensionMm,
+    cableCount = 1,
+    shelvesCount = 1,
+    dryFilmThicknessMm = 0.5,
+    applicationMethod = "brush_10",
+    customRateKgM2,
+  } = input;
+
+  if (lengthM <= 0 || dimensionMm <= 0) {
+    return {
+      areaM2: 0,
+      wetFilmThicknessMm: 0,
+      baseRateKgM2: 0,
+      effectiveRateKgM2: 0,
+      flammotectMassKg: 0,
+      flammotectBucketsCount: 0,
+      formulaExplanation: "Некорректные входные данные (длина или диаметр <= 0).",
+      recommendedMeasurementsCount: 0,
+    };
+  }
+
+  const dimensionM = dimensionMm / 1000;
+  const count = Math.max(1, cableCount);
+  const shelves = Math.max(1, shelvesCount);
+
+  let areaM2 = 0;
+  let formulaExplanation = "";
+
+  switch (installationType) {
+    case "single": {
+      // S = L * π * d * N (п. 3.2.2)
+      areaM2 = lengthM * 3.1416 * dimensionM * count;
+      formulaExplanation = `S = L × π × d × N = ${lengthM} м × 3.1416 × ${dimensionM.toFixed(4)} м × ${count} шт.`;
+      break;
+    }
+    case "bundle": {
+      // S = L * π * d * 1.5 (п. 3.2.3)
+      areaM2 = lengthM * 3.1416 * dimensionM * 1.5;
+      formulaExplanation = `S = L × π × d × 1.5 = ${lengthM} м × 3.1416 × ${dimensionM.toFixed(4)} м × 1.5 (коэф. пучка)`;
+      break;
+    }
+    case "tray_solid": {
+      // S = L * b * 1.5 * N_shelves (п. 3.2.1)
+      areaM2 = lengthM * dimensionM * 1.5 * shelves;
+      formulaExplanation = `S = L × b × 1.5 × N_полок = ${lengthM} м × ${dimensionM.toFixed(3)} м × 1.5 × ${shelves} пол. (глухой короб)`;
+      break;
+    }
+    case "tray_mesh": {
+      // S = L * b * 1.5 * 2 * N_shelves (п. 3.2.1)
+      areaM2 = lengthM * dimensionM * 1.5 * 2 * shelves;
+      formulaExplanation = `S = L × b × 1.5 × 2 × N_полок = ${lengthM} м × ${dimensionM.toFixed(3)} м × 1.5 × 2 × ${shelves} пол. (сетчатый короб, двусторонняя обработка)`;
+      break;
+    }
+  }
+
+  // Расчет толщины мокрого слоя WFT (п. 5.2): 0.9 мм мокрого = 0.5 мм сухого (множитель 1.8)
+  const wetFilmThicknessMm = dryFilmThicknessMm * FLAMMOTECT_CONSTANTS.WET_TO_DRY_RATIO;
+
+  // Базовая норма расхода (кг/м²):
+  // Либо пользовательская, либо через плотность (1.4 кг/л) и толщину мокрого слоя
+  const baseRateKgM2 =
+    customRateKgM2 && customRateKgM2 > 0
+      ? customRateKgM2
+      : wetFilmThicknessMm * FLAMMOTECT_CONSTANTS.DENSITY_G_CM3;
+
+  // Технологические потери
+  const lossFactor = FLAMMOTECT_APPLICATION_LOSSES[applicationMethod]?.factor || 1.10;
+  const effectiveRateKgM2 = baseRateKgM2 * lossFactor;
+
+  // Итоговая масса
+  const flammotectMassKg = areaM2 * effectiveRateKgM2;
+  const flammotectBucketsCount = Math.ceil(flammotectMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
+
+  // Рекомендованное количество точек замера по регламенту (п. 5.1):
+  // Каждые 15-20 м, но не менее 10 точек
+  const recommendedMeasurementsCount = Math.max(10, Math.ceil(lengthM / 20));
+
+  return {
+    areaM2: roundTo(areaM2, 3),
+    wetFilmThicknessMm: roundTo(wetFilmThicknessMm, 2),
+    baseRateKgM2: roundTo(baseRateKgM2, 2),
+    effectiveRateKgM2: roundTo(effectiveRateKgM2, 2),
+    flammotectMassKg: roundTo(flammotectMassKg, 2),
+    flammotectBucketsCount,
+    formulaExplanation,
+    recommendedMeasurementsCount,
+  };
+}
+
+// ==========================================
+// МОДУЛЬ 4: КАБЕЛЬНЫЕ ПРОХОДКИ DOUBLE LAYER (PYRO-SAFE FLAMMOTECT-A)
+// ==========================================
+
+export const FLAMMOTECT_PENETRATION_CONSTANTS = {
+  /** Норма расхода покрытия FLAMMOTECT-A coating на 1 м² проходки (кг) без потерь */
+  COATING_KG_M2: 6.48,
+  /** Норма расхода шпаклевки FLAMMOTECT-A filler на 1 м² проходки (кг) без потерь */
+  FILLER_KG_M2: 5.00,
+  /** Площадь минплиты на 1 м² проходки (2 слоя плиты по 60 мм = 2.0 м²) */
+  MINERAL_BOARD_M2_PER_M2: 2.0,
+  /** Норма расхода рассыпной базальтовой ваты на 1 м² проходки (кг) */
+  LOOSE_WOOL_KG_M2: 1.52,
+  /** Максимально допустимый процент заполнения проходки (60%) */
+  MAX_FILL_RATIO_PERCENT: 60.0,
+  /** Максимальные габариты проема: ширина/высота не более 2000 мм (п. Таблица 2) */
+  MAX_WIDTH_MM: 2000,
+  MAX_HEIGHT_MM: 2000,
+  /** Технологические потери на минплиту и вату при подгонке/раскрое (до 30%) */
+  BOARD_CUTTING_LOSS_FACTOR: 1.30,
+  WOOL_INSTALL_LOSS_FACTOR: 1.30,
+} as const;
+
+export type PenetrantType = "cable" | "pipe_plastic" | "pipe_metal";
+
+export interface FlammotectPenetrantItem {
+  id: string;
+  name?: string;
+  type: PenetrantType;
+  /** Внешний диаметр (мм) */
+  diameterMm: number;
+  /** Количество */
+  count: number;
+  /** Длина вылета огнезащиты (мм) для кабелей (100–250 мм, по умолчанию 200 мм) */
+  runoutLengthMm?: number;
+}
+
+export interface FlammotectPenetrationInput {
+  shape: PenetrationShape;
+  heightMm?: number;
+  widthMm?: number;
+  diameterMm?: number;
+  penetrants: FlammotectPenetrantItem[];
+  applicationMethod: FlammotectApplicationMethod;
+  includeCuttingLosses: boolean; // Учитывать +30% потерь на раскрой плит и набивку ваты
+  isFloorPenetration?: boolean; // Перекрытие (пол/потолок) или стена
+}
+
+export interface FlammotectPenetrationResult {
+  openingAreaM2: number;
+  openingAreaMm2: number;
+  penetrantsAreaMm2: number;
+  fillRatioPercent: number;
+  isBlocked: boolean;
+  validationError?: string;
+  /** Количество слоев минераловатных плит (всегда 2 слоя по 60 мм = 120 мм) */
+  boardLayers: 2;
+  /** Площадь минплиты (м²) с учетом раскроя */
+  boardAreaM2: number;
+  /** Масса рассыпной минваты (кг) */
+  looseWoolMassKg: number;
+  /** Масса FLAMMOTECT-A coating (кг) */
+  coatingMassKg: number;
+  /** Количество ведер coating (по 12.5 кг) */
+  coatingBucketsCount: number;
+  /** Масса FLAMMOTECT-A filler (кг) */
+  fillerMassKg: number;
+  /** Количество ведер filler (по 12.5 кг) */
+  fillerBucketsCount: number;
+  /** Противопожарная обертка DG-CR BS для горючих труб (погонные метры) */
+  dgCrBsMeters: number;
+  /** Количество рекомендуемых контрольных замеров толщины */
+  measurementsCount: number;
+}
+
+/**
+ * Расчет расхода материалов на двухслойную проходку «PYRO-SAFE Flammotect – Double layer» (EI 120)
+ * Регламент ТОВ «ІПВК «СПЕЦЗАХИСТ» / svt Products GmbH (2022)
+ */
+export function calculateFlammotectPenetration(
+  input: FlammotectPenetrationInput
+): FlammotectPenetrationResult {
+  const {
+    shape,
+    heightMm = 0,
+    widthMm = 0,
+    diameterMm = 0,
+    penetrants,
+    applicationMethod = "brush_10",
+    includeCuttingLosses = true,
+    isFloorPenetration = false,
+  } = input;
+
+  // 1. Площадь проема
+  let openingAreaMm2 = 0;
+  if (shape === "rect") {
+    openingAreaMm2 = heightMm * widthMm;
+  } else {
+    const radius = diameterMm / 2;
+    openingAreaMm2 = Math.PI * radius * radius;
+  }
+  const openingAreaM2 = openingAreaMm2 / 1_000_000;
+
+  // 2. Суммарная площадь коммуникаций
+  let penetrantsAreaMm2 = 0;
+  let dgCrBsMeters = 0;
+
+  for (const item of penetrants) {
+    if (item.diameterMm > 0 && item.count > 0) {
+      const radius = item.diameterMm / 2;
+      const singleArea = Math.PI * radius * radius;
+      penetrantsAreaMm2 += singleArea * item.count;
+
+      // Для пластиковых горючих труб рассчитываем обмотку DG-CR BS по Табл. 13-14
+      if (item.type === "pipe_plastic") {
+        // Определение слоев обертывания по диаметру:
+        let layers = 1;
+        if (item.diameterMm > 110) layers = 4;
+        else if (item.diameterMm > 80) layers = 3;
+        else if (item.diameterMm > 50) layers = 2;
+
+        // Для стен: 2 обертки (с обеих сторон); для перекрытия: 1 обертка
+        const wrapsCount = isFloorPenetration ? 1 : 2;
+        // Длина обертки на одну трубу = π * d * layers
+        const wrapPerPipeM = (Math.PI * (item.diameterMm / 1000) * layers + 0.05) * wrapsCount;
+        dgCrBsMeters += wrapPerPipeM * item.count;
+      }
+    }
+  }
+
+  // 3. Коэффициент заполнения
+  const fillRatioPercent =
+    openingAreaMm2 > 0 ? (penetrantsAreaMm2 / openingAreaMm2) * 100 : 0;
+
+  // 4. Валидация ограничений регламента
+  const exceedsMaxDimension =
+    (shape === "rect" && (widthMm > 2000 || heightMm > 2000)) ||
+    (shape === "round" && diameterMm > 2000);
+
+  const exceedsMaxFill = fillRatioPercent > FLAMMOTECT_PENETRATION_CONSTANTS.MAX_FILL_RATIO_PERCENT;
+  const isBlocked = openingAreaMm2 <= 0 || exceedsMaxFill;
+
+  let validationError: string | undefined;
+  if (openingAreaMm2 <= 0) {
+    validationError = "Укажите корректные размеры проема проходки.";
+  } else if (exceedsMaxFill) {
+    validationError = `Загальний дозволений переріз комунікацій не може перевищувати 60% від площі проходки! Фактичне заповнення: ${roundTo(fillRatioPercent, 1)}%. Розрахунок заблоковано регламентом.`;
+  } else if (exceedsMaxDimension) {
+    validationError = "Внимание: габарит проема превышает нормативный максимум регламента (2000 мм).";
+  }
+
+  // Коэффициенты технологических потерь
+  const coatingLossFactor = FLAMMOTECT_APPLICATION_LOSSES[applicationMethod]?.factor || 1.10;
+  const cuttingLossFactor = includeCuttingLosses
+    ? FLAMMOTECT_PENETRATION_CONSTANTS.BOARD_CUTTING_LOSS_FACTOR
+    : 1.0;
+  const woolLossFactor = includeCuttingLosses
+    ? FLAMMOTECT_PENETRATION_CONSTANTS.WOOL_INSTALL_LOSS_FACTOR
+    : 1.0;
+
+  if (isBlocked) {
+    return {
+      openingAreaM2: roundTo(openingAreaM2, 4),
+      openingAreaMm2: roundTo(openingAreaMm2, 1),
+      penetrantsAreaMm2: roundTo(penetrantsAreaMm2, 1),
+      fillRatioPercent: roundTo(fillRatioPercent, 2),
+      isBlocked: true,
+      validationError,
+      boardLayers: 2,
+      boardAreaM2: 0,
+      looseWoolMassKg: 0,
+      coatingMassKg: 0,
+      coatingBucketsCount: 0,
+      fillerMassKg: 0,
+      fillerBucketsCount: 0,
+      dgCrBsMeters: 0,
+      measurementsCount: 0,
+    };
+  }
+
+  // Расчет основных материалов на 1 м² проема:
+  // 1. Минплита: 2.0 м² на 1 м² (2 слоя по 60 мм) * раскрой
+  const boardAreaM2 = openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.MINERAL_BOARD_M2_PER_M2 * cuttingLossFactor;
+
+  // 2. Рассыпная минвата: 1.52 кг на 1 м² * потери
+  const looseWoolMassKg = openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.LOOSE_WOOL_KG_M2 * woolLossFactor;
+
+  // 3. FLAMMOTECT-A coating: 6.48 кг на 1 м² * потери при нанесении
+  const coatingMassKg = openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.COATING_KG_M2 * coatingLossFactor;
+  const coatingBucketsCount = Math.ceil(coatingMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
+
+  // 4. FLAMMOTECT-A filler: 5.00 кг на 1 м² * потери
+  const fillerMassKg = openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.FILLER_KG_M2 * coatingLossFactor;
+  const fillerBucketsCount = Math.ceil(fillerMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
+
+  // Количество замеров толщины (п. 5.1): 2 замера на каждый 1 м² проходки
+  const measurementsCount = Math.max(2, Math.ceil(openingAreaM2 * 2));
+
+  return {
+    openingAreaM2: roundTo(openingAreaM2, 4),
+    openingAreaMm2: roundTo(openingAreaMm2, 1),
+    penetrantsAreaMm2: roundTo(penetrantsAreaMm2, 1),
+    fillRatioPercent: roundTo(fillRatioPercent, 2),
+    isBlocked: false,
+    validationError,
+    boardLayers: 2,
+    boardAreaM2: roundTo(boardAreaM2, 3),
+    looseWoolMassKg: roundTo(looseWoolMassKg, 2),
+    coatingMassKg: roundTo(coatingMassKg, 2),
+    coatingBucketsCount,
+    fillerMassKg: roundTo(fillerMassKg, 2),
+    fillerBucketsCount,
+    dgCrBsMeters: roundTo(dgCrBsMeters, 2),
+    measurementsCount,
+  };
+}
+
+// ==========================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ==========================================
 
