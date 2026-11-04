@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useForm, useFieldArray, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   flammotectCableFormSchema,
@@ -81,6 +81,13 @@ export function FlammotectCableCalculator({
 
   const formValues = watch();
 
+  const watchedBundleCables = useWatch({
+    control,
+    name: "bundleCables",
+  });
+
+  const currentBundleCables = watchedBundleCables || formValues.bundleCables || [];
+
   const result: FlammotectCableResult = calculateFlammotectCableLine({
     installationType: formValues.installationType,
     lengthM: Number(formValues.lengthM) || 0,
@@ -95,11 +102,11 @@ export function FlammotectCableCalculator({
       ? Number(formValues.customRateKgM2)
       : undefined,
     bundleSizeMode: formValues.bundleSizeMode || "auto",
-    bundleCables: (formValues.bundleCables || []).map((c) => ({
-      id: c.id,
-      name: c.name,
-      diameterMm: Number(c.diameterMm) || 0,
-      count: Number(c.count) || 0,
+    bundleCables: currentBundleCables.map((c) => ({
+      id: c?.id || "",
+      name: c?.name || "",
+      diameterMm: Number(c?.diameterMm) || 0,
+      count: Number(c?.count) || 0,
     })),
   });
 
@@ -383,10 +390,10 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                     <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 shrink-0 self-start sm:self-center">
                       <button
                         type="button"
-                        onClick={() => setValue("bundleSizeMode", "auto")}
-                        className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                        onClick={() => setValue("bundleSizeMode", "auto", { shouldValidate: true, shouldDirty: true })}
+                        className={`px-2.5 py-1 rounded text-[11px] font-medium cursor-pointer transition-colors ${
                           formValues.bundleSizeMode !== "manual"
-                            ? "bg-teal-600 text-white shadow-sm"
+                            ? "bg-teal-600 text-white shadow-sm font-semibold"
                             : "text-slate-400 hover:text-white"
                         }`}
                       >
@@ -394,10 +401,10 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                       </button>
                       <button
                         type="button"
-                        onClick={() => setValue("bundleSizeMode", "manual")}
-                        className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                        onClick={() => setValue("bundleSizeMode", "manual", { shouldValidate: true, shouldDirty: true })}
+                        className={`px-2.5 py-1 rounded text-[11px] font-medium cursor-pointer transition-colors ${
                           formValues.bundleSizeMode === "manual"
-                            ? "bg-teal-600 text-white shadow-sm"
+                            ? "bg-teal-600 text-white shadow-sm font-semibold"
                             : "text-slate-400 hover:text-white"
                         }`}
                       >
@@ -445,9 +452,12 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                                         min="1"
                                         max="500"
                                         placeholder="Диаметр"
-                                        value={field.value ?? ""}
-                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                        className="w-20 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white text-right font-mono focus:outline-none focus:border-teal-500"
+                                        value={field.value === 0 || field.value === undefined ? "" : field.value}
+                                        onChange={(e) => {
+                                          const val = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                                          field.onChange(isNaN(val) ? 0 : val);
+                                        }}
+                                        className="w-24 bg-slate-950 border border-slate-800 rounded-lg pr-7 pl-2.5 py-1.5 text-xs text-white text-right font-mono focus:outline-none focus:border-teal-500"
                                       />
                                       <span className="text-[10px] text-slate-500 absolute right-2 top-2 pointer-events-none font-mono">
                                         мм
@@ -463,10 +473,13 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const cur = Number(formValues.bundleCables?.[idx]?.count) || 1;
-                                      setValue(`bundleCables.${idx}.count`, Math.max(1, cur - 1));
+                                      const cur = Number(currentBundleCables?.[idx]?.count) || 1;
+                                      setValue(`bundleCables.${idx}.count`, Math.max(1, cur - 1), {
+                                        shouldValidate: true,
+                                        shouldDirty: true,
+                                      });
                                     }}
-                                    className="w-6 h-7 flex items-center justify-center text-slate-400 hover:text-white text-xs font-bold transition-colors"
+                                    className="w-6 h-7 flex items-center justify-center text-slate-400 hover:text-white text-xs font-bold cursor-pointer transition-colors"
                                     title="Уменьшить количество"
                                   >
                                     -
@@ -488,10 +501,13 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const cur = Number(formValues.bundleCables?.[idx]?.count) || 1;
-                                      setValue(`bundleCables.${idx}.count`, cur + 1);
+                                      const cur = Number(currentBundleCables?.[idx]?.count) || 1;
+                                      setValue(`bundleCables.${idx}.count`, cur + 1, {
+                                        shouldValidate: true,
+                                        shouldDirty: true,
+                                      });
                                     }}
-                                    className="w-6 h-7 flex items-center justify-center text-slate-400 hover:text-white text-xs font-bold transition-colors"
+                                    className="w-6 h-7 flex items-center justify-center text-slate-400 hover:text-white text-xs font-bold cursor-pointer transition-colors"
                                     title="Увеличить количество"
                                   >
                                     +
@@ -504,7 +520,7 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                                 type="button"
                                 onClick={() => removeBundleField(idx)}
                                 disabled={bundleFields.length <= 1}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-800 disabled:opacity-20 transition-colors"
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-800 disabled:opacity-20 cursor-pointer transition-colors"
                                 title="Удалить строку кабеля"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -526,7 +542,7 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                               count: 1,
                             })
                           }
-                          className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-teal-950/70 hover:bg-teal-900 border border-teal-800/50 text-teal-300 transition-colors"
+                          className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-teal-950/70 hover:bg-teal-900 border border-teal-800/50 text-teal-300 cursor-pointer transition-colors"
                         >
                           <Plus className="w-3.5 h-3.5 mr-1" />
                           Добавить кабель в пучок
@@ -559,7 +575,7 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                                   count: 1,
                                 })
                               }
-                              className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 transition-colors"
+                              className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 cursor-pointer transition-colors"
                             >
                               <span>{c.name}</span>
                               <span className="font-mono text-teal-400">Ø{c.dia}</span>
@@ -606,9 +622,9 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                             type="button"
                             onClick={() => {
                               const cur = Number(formValues.cableCount) || 1;
-                              setValue("cableCount", Math.max(1, cur - 1));
+                              setValue("cableCount", Math.max(1, cur - 1), { shouldValidate: true, shouldDirty: true });
                             }}
-                            className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold transition-colors"
+                            className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold cursor-pointer transition-colors"
                           >
                             -
                           </button>
@@ -630,9 +646,9 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                             type="button"
                             onClick={() => {
                               const cur = Number(formValues.cableCount) || 1;
-                              setValue("cableCount", cur + 1);
+                              setValue("cableCount", cur + 1, { shouldValidate: true, shouldDirty: true });
                             }}
-                            className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold transition-colors"
+                            className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold cursor-pointer transition-colors"
                           >
                             +
                           </button>
@@ -920,7 +936,7 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+                  className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white cursor-pointer transition-colors"
                 >
                   {copied ? (
                     <>
@@ -938,7 +954,7 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                 <button
                   type="button"
                   onClick={handleAddPosition}
-                  className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-500 transition-all shadow-lg shadow-teal-950/40"
+                  className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-500 cursor-pointer transition-all shadow-lg shadow-teal-950/40"
                 >
                   <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
                   В спецификацию

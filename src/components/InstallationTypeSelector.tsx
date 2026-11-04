@@ -272,10 +272,10 @@ export function InstallationTypeSelector({
             key={type.id}
             type="button"
             onClick={() => onChange(type.id)}
-            className={`group text-left p-4 rounded-xl border transition-all duration-150 relative flex flex-col justify-between ${
+            className={`group text-left p-4 rounded-xl border transition-all duration-150 relative flex flex-col justify-between cursor-pointer ${
               isSelected
-                ? "bg-orange-500/10 border-orange-500 shadow-md shadow-orange-950/30"
-                : "bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40 text-slate-300"
+                ? "bg-orange-500/10 border-orange-500 shadow-md shadow-orange-950/30 ring-1 ring-orange-500/40"
+                : "bg-slate-950/60 border-slate-800 hover:border-orange-500/50 hover:bg-slate-900/80 text-slate-300"
             }`}
           >
             {/* Статичный индикатор выбора в правом нижнем углу */}

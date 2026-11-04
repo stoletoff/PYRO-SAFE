@@ -41,7 +41,7 @@ export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSect
           <button
             type="button"
             onClick={() => handleAddCustomPenetrant("cable")}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 inline-flex items-center"
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 inline-flex items-center cursor-pointer transition-colors"
           >
             <Plus className="w-3.5 h-3.5 mr-1 text-teal-400" />
             + Кабель
@@ -49,7 +49,7 @@ export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSect
           <button
             type="button"
             onClick={() => handleAddCustomPenetrant("pipe_plastic")}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 inline-flex items-center"
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 inline-flex items-center cursor-pointer transition-colors"
           >
             <Plus className="w-3.5 h-3.5 mr-1 text-rose-400" />
             + Пласт. труба
@@ -57,7 +57,7 @@ export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSect
           <button
             type="button"
             onClick={() => handleAddCustomPenetrant("pipe_metal")}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 inline-flex items-center"
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 inline-flex items-center cursor-pointer transition-colors"
           >
             <Plus className="w-3.5 h-3.5 mr-1 text-amber-400" />
             + Металл. труба
@@ -162,7 +162,7 @@ export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSect
                 <button
                   type="button"
                   onClick={() => remove(index)}
-                  className="text-slate-500 hover:text-red-400 p-1.5 transition-colors self-end sm:self-center"
+                  className="text-slate-500 hover:text-red-400 p-1.5 cursor-pointer transition-colors self-end sm:self-center"
                   title="Удалить"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -185,9 +185,9 @@ export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSect
                 key={filterKey}
                 type="button"
                 onClick={() => setSelectedFilter(filterKey)}
-                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                className={`px-2 py-0.5 rounded text-[10px] font-medium cursor-pointer transition-colors ${
                   selectedFilter === filterKey
-                    ? "bg-rose-500 text-white"
+                    ? "bg-rose-500 text-white font-bold"
                     : "bg-slate-800 text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -220,7 +220,7 @@ export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSect
               key={cable.id}
               type="button"
               onClick={() => handleAddCableSpec(cable)}
-              className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-[11px] text-slate-300 transition-colors"
+              className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-[11px] text-slate-300 cursor-pointer transition-colors"
             >
               <span>{cable.name}</span>
               <span className="font-mono text-teal-400">Ø{cable.diameterMm}</span>

@@ -41,7 +41,7 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
             <button
               onClick={() => setActiveTab("reference")}
               title="Техрегламент & Нормативы"
-              className={`inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-all ${
+              className={`inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium cursor-pointer transition-all ${
                 activeTab === "reference"
                   ? "bg-slate-800 text-teal-400 border border-teal-500/30"
                   : "bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800"
@@ -55,7 +55,7 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
             <button
               onClick={() => setActiveTab("summary")}
               title="Спецификация проекта"
-              className={`relative inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-all ${
+              className={`relative inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium cursor-pointer transition-all ${
                 activeTab === "summary"
                   ? "bg-rose-600 text-white shadow-md shadow-rose-900/40"
                   : "bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800"
@@ -73,7 +73,7 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
             <button
               onClick={handlePrint}
               title="Печать или экспорт в PDF"
-              className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800 transition-colors"
+              className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800 cursor-pointer transition-colors"
             >
               <Printer className="w-4 h-4 sm:mr-1.5" />
               <span className="hidden sm:inline">Печать / PDF</span>
@@ -87,9 +87,9 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
             {/* FLAMMOTECT-A Cable */}
             <button
               onClick={() => setActiveTab("cable")}
-              className={`flex items-center px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+              className={`flex items-center px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap cursor-pointer transition-all shrink-0 ${
                 activeTab === "cable"
-                  ? "bg-teal-500/15 text-teal-300 border border-teal-500/40 shadow-sm shadow-teal-950"
+                  ? "bg-teal-500/15 text-teal-300 border border-teal-500/40 shadow-sm shadow-teal-950 font-semibold"
                   : "text-slate-400 hover:text-teal-200 hover:bg-slate-900"
               }`}
             >
@@ -100,9 +100,9 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
             {/* FLAMMOTECT-A Double Layer Penetration */}
             <button
               onClick={() => setActiveTab("penetration")}
-              className={`flex items-center px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+              className={`flex items-center px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap cursor-pointer transition-all shrink-0 ${
                 activeTab === "penetration"
-                  ? "bg-rose-500/15 text-rose-300 border border-rose-500/40 shadow-sm shadow-rose-950"
+                  ? "bg-rose-500/15 text-rose-300 border border-rose-500/40 shadow-sm shadow-rose-950 font-semibold"
                   : "text-slate-400 hover:text-rose-200 hover:bg-slate-900"
               }`}
             >
@@ -113,9 +113,9 @@ export function Header({ activeTab, setActiveTab, summaryCount }: HeaderProps) {
             {/* Summary Tab */}
             <button
               onClick={() => setActiveTab("summary")}
-              className={`flex items-center px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+              className={`flex items-center px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap cursor-pointer transition-all shrink-0 ${
                 activeTab === "summary"
-                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-950"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-950 font-semibold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
               }`}
             >

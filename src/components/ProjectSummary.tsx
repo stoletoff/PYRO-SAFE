@@ -155,7 +155,7 @@ export function ProjectSummary({
               type="button"
               disabled={items.length === 0}
               onClick={handleExportCSV}
-              className="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700 transition-colors"
+              className="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700 cursor-pointer disabled:cursor-not-allowed transition-colors"
             >
               <Download className="w-4 h-4 mr-1.5 text-rose-400" />
               Экспорт в CSV
@@ -165,7 +165,7 @@ export function ProjectSummary({
               type="button"
               disabled={items.length === 0}
               onClick={handleCopySpec}
-              className="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700 transition-colors"
+              className="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700 cursor-pointer disabled:cursor-not-allowed transition-colors"
             >
               {copied ? (
                 <>
@@ -184,7 +184,7 @@ export function ProjectSummary({
               type="button"
               disabled={items.length === 0}
               onClick={() => window.print()}
-              className="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-medium bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white shadow-md shadow-rose-950/40 transition-colors"
+              className="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-medium bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white shadow-md shadow-rose-950/40 cursor-pointer disabled:cursor-not-allowed transition-colors"
             >
               <Printer className="w-4 h-4 mr-1.5" />
               Печать спецификации
@@ -302,7 +302,7 @@ export function ProjectSummary({
                 <button
                   type="button"
                   onClick={onReverse}
-                  className="text-xs text-slate-400 hover:text-white flex items-center transition-colors"
+                  className="text-xs text-slate-400 hover:text-white flex items-center cursor-pointer transition-colors"
                   title="Инвертировать порядок строк (сверху-вниз / снизу-вверх)"
                 >
                   <ArrowUpDown className="w-3.5 h-3.5 mr-1 text-slate-400" />
@@ -312,7 +312,7 @@ export function ProjectSummary({
               <button
                 type="button"
                 onClick={onClearAll}
-                className="text-xs text-red-400 hover:text-red-300 flex items-center transition-colors"
+                className="text-xs text-red-400 hover:text-red-300 flex items-center cursor-pointer transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1" />
                 Очистить все
@@ -336,14 +336,14 @@ export function ProjectSummary({
               <button
                 type="button"
                 onClick={() => onNavigateToTab("cable")}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-teal-600 hover:bg-teal-500 text-white transition-colors"
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-teal-600 hover:bg-teal-500 text-white cursor-pointer transition-colors"
               >
                 Кабели (FLAMMOTECT-A)
               </button>
               <button
                 type="button"
                 onClick={() => onNavigateToTab("penetration")}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors"
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white cursor-pointer transition-colors"
               >
                 Проходки & Гильзы (Double Layer)
               </button>
@@ -424,7 +424,7 @@ export function ProjectSummary({
                               type="button"
                               onClick={() => onMoveUp(item.id)}
                               disabled={index === 0}
-                              className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-20 transition-colors"
+                              className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed transition-colors"
                               title="Переместить вверх"
                             >
                               <ChevronUp className="w-3.5 h-3.5" />
@@ -435,7 +435,7 @@ export function ProjectSummary({
                               type="button"
                               onClick={() => onMoveDown(item.id)}
                               disabled={index === items.length - 1}
-                              className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-20 transition-colors"
+                              className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed transition-colors"
                               title="Переместить вниз"
                             >
                               <ChevronDown className="w-3.5 h-3.5" />
@@ -444,7 +444,7 @@ export function ProjectSummary({
                           <button
                             type="button"
                             onClick={() => onRemoveItem(item.id)}
-                            className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors"
+                            className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 cursor-pointer transition-colors"
                             title="Удалить позицию"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

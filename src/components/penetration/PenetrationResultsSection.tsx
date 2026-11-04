@@ -369,7 +369,7 @@ export function PenetrationResultsSection({ calc }: PenetrationResultsSectionPro
             type="button"
             onClick={handleCopy}
             disabled={result.isBlocked}
-            className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Копировать текстовый расчет ОЗС"
           >
             {copied ? (
@@ -389,7 +389,7 @@ export function PenetrationResultsSection({ calc }: PenetrationResultsSectionPro
             type="button"
             onClick={handlePrint}
             disabled={result.isBlocked}
-            className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Печать спецификации ОЗС"
           >
             <Printer className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
@@ -400,7 +400,7 @@ export function PenetrationResultsSection({ calc }: PenetrationResultsSectionPro
             type="button"
             onClick={handleAddPosition}
             disabled={result.isBlocked}
-            className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-500 transition-all shadow-lg shadow-rose-950/40 disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-500 cursor-pointer transition-all shadow-lg shadow-rose-950/40 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
             В проект

@@ -110,7 +110,7 @@ export default function Home() {
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setActiveTab("reference")}
-              className="hover:text-slate-300 transition-colors"
+              className="hover:text-slate-300 cursor-pointer transition-colors"
             >
               Технический регламент
             </button>

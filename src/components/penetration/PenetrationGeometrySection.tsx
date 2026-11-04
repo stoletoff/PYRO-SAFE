@@ -62,7 +62,7 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
                 const cur = Number(formValues.count) || 1;
                 setValue("count", Math.max(1, cur - 1));
               }}
-              className="w-5 h-5 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold transition-colors"
+              className="w-5 h-5 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold cursor-pointer transition-colors"
               title="Уменьшить количество"
             >
               -
@@ -91,7 +91,7 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
                 const cur = Number(formValues.count) || 1;
                 setValue("count", Math.min(1000, cur + 1));
               }}
-              className="w-5 h-5 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold transition-colors"
+              className="w-5 h-5 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold cursor-pointer transition-colors"
               title="Увеличить количество"
             >
               +
@@ -110,10 +110,10 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
           <button
             type="button"
             onClick={() => setValue("isFloorPenetration", false)}
-            className={`p-3 rounded-xl border text-left transition-all ${
+            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
               !formValues.isFloorPenetration
                 ? "bg-rose-500/10 border-rose-500/40 text-white shadow-md shadow-rose-950/20"
-                : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-900"
             }`}
           >
             <strong className="block text-xs font-bold mb-0.5">Стена / перегородка</strong>
@@ -123,10 +123,10 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
           <button
             type="button"
             onClick={() => setValue("isFloorPenetration", true)}
-            className={`p-3 rounded-xl border text-left transition-all ${
+            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
               formValues.isFloorPenetration
                 ? "bg-rose-500/10 border-rose-500/40 text-white shadow-md shadow-rose-950/20"
-                : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-900"
             }`}
           >
             <strong className="block text-xs font-bold mb-0.5">Перекрытие (пол/потолок)</strong>
@@ -165,7 +165,7 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
                   key={t}
                   type="button"
                   onClick={() => setWallThicknessMm(t)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono cursor-pointer transition-colors ${
                     wallThicknessMm === t
                       ? "bg-rose-500 text-white font-bold"
                       : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
@@ -182,7 +182,7 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
                   key={t}
                   type="button"
                   onClick={() => setWallThicknessMm(t)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono cursor-pointer transition-colors ${
                     wallThicknessMm === t
                       ? "bg-rose-500 text-white font-bold"
                       : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
@@ -245,7 +245,7 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
           <button
             type="button"
             onClick={handleApplyRecommendedSleeve}
-            className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-950/30 transition-all self-start sm:self-auto"
+            className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-950/30 cursor-pointer transition-all self-start sm:self-auto"
           >
             Применить рекомендованное
           </button>
@@ -269,7 +269,7 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
                     key={s.du}
                     type="button"
                     onClick={() => handleSelectRoundSleeve(s)}
-                    className={`p-2 rounded-lg border text-left text-[11px] transition-all flex flex-col justify-between ${
+                    className={`p-2 rounded-lg border text-left text-[11px] cursor-pointer transition-all flex flex-col justify-between ${
                       isCurrent
                         ? "bg-rose-950/90 border-rose-500 text-white shadow-sm ring-1 ring-rose-500/50"
                         : isOver
@@ -303,7 +303,7 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
                     key={idx}
                     type="button"
                     onClick={() => handleSelectRectSleeve(s)}
-                    className={`p-2 rounded-lg border text-left text-[11px] transition-all flex flex-col justify-between ${
+                    className={`p-2 rounded-lg border text-left text-[11px] cursor-pointer transition-all flex flex-col justify-between ${
                       isCurrent
                         ? "bg-rose-950/90 border-rose-500 text-white shadow-sm ring-1 ring-rose-500/50"
                         : isOver
@@ -345,10 +345,10 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
           <button
             type="button"
             onClick={() => setValue("shape", "round")}
-            className={`p-3 rounded-xl border text-left transition-all ${
+            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
               formValues.shape === "round"
                 ? "bg-slate-800 text-white border-rose-500/40"
-                : "bg-slate-950/60 text-slate-400 border-slate-800 hover:border-slate-700"
+                : "bg-slate-950/60 text-slate-400 border-slate-800 hover:border-slate-700 hover:bg-slate-900"
             }`}
           >
             <strong className="block text-xs font-bold mb-0.5">Круглая гильза (труба)</strong>
@@ -358,10 +358,10 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
           <button
             type="button"
             onClick={() => setValue("shape", "rect")}
-            className={`p-3 rounded-xl border text-left transition-all ${
+            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
               formValues.shape === "rect"
                 ? "bg-slate-800 text-white border-rose-500/40"
-                : "bg-slate-950/60 text-slate-400 border-slate-800 hover:border-slate-700"
+                : "bg-slate-950/60 text-slate-400 border-slate-800 hover:border-slate-700 hover:bg-slate-900"
             }`}
           >
             <strong className="block text-xs font-bold mb-0.5">Прямоугольный короб / проем</strong>
