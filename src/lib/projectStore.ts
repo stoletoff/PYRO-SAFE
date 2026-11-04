@@ -39,6 +39,7 @@ export interface ProjectFlammotectPenetrationItem {
     sleeveTag?: string;
     sleeveSpec?: string;
     wallThicknessMm?: number;
+    count?: number;
   };
   result: FlammotectPenetrationResult;
 }

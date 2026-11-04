@@ -74,6 +74,7 @@ export const flammotectPenetrationFormSchema = z
     isFloorPenetration: z.boolean(),
     wallThicknessMm: z.number().positive().max(2000).optional(),
     sleeveTag: z.string().optional(),
+    count: z.number().int().min(1).max(1000).optional(),
     penetrants: z.array(flammotectPenetrantItemSchema),
   })
   .refine(

@@ -148,6 +148,7 @@ export function FlammotectPenetrationCalculator({
       heightMm: 400,
       widthMm: 600,
       diameterMm: 150,
+      count: 1,
       applicationMethod: "sprayer_30",
       includeCuttingLosses: true,
       isFloorPenetration: false,
@@ -184,6 +185,7 @@ export function FlammotectPenetrationCalculator({
     includeCuttingLosses: Boolean(formValues.includeCuttingLosses),
     isFloorPenetration: Boolean(formValues.isFloorPenetration),
     wallThicknessMm: Number(wallThicknessMm) || 200,
+    count: Number(formValues.count) || 1,
   });
 
   const coatingLossFactor =
@@ -334,25 +336,47 @@ export function FlammotectPenetrationCalculator({
       .map((p) => `${p.name || "Элемент"} (Ø${p.diameterMm}мм, ${p.count} шт.)`)
       .join("; ");
 
+    const countInfo =
+      result.count > 1 ? `\nКоличество одинаковых проходок: ${result.count} шт.` : "";
+
+    const singleBreakdown =
+      result.count > 1
+        ? `\n---\nПОТРЕБНОСТЬ НА 1 ПРОХОДКУ:
+- Просвет проема: ${result.singlePenetration.openingAreaM2} м² (${result.singlePenetration.openingAreaCm2} см²)
+- FLAMMOTECT-A coating: ${result.singlePenetration.coatingMassKg} кг (${result.singlePenetration.coatingBucketsCount} вёдер)
+- FLAMMOTECT-A filler: ${result.singlePenetration.fillerMassKg} кг (${result.singlePenetration.fillerBucketsCount} вёдер)
+- Минплита 150 кг/м³ (2 слоя): ${result.singlePenetration.boardAreaM2} м²
+- Базальтовая минвата: ${result.singlePenetration.looseWoolMassKg} кг${
+            result.singlePenetration.dgCrBsMeters > 0
+              ? `\n- Обмотка DG-CR BS: ${result.singlePenetration.dgCrBsMeters} пог. м`
+              : ""
+          }`
+        : "";
+
+    const totalsHeader =
+      result.count > 1
+        ? `ИТОГО НА ${result.count} ШТУК (В СПЕЦИФИКАЦИЮ):`
+        : "ПОТРЕБНОСТЬ В МАТЕРИАЛАХ ОЗС (ПО РЕГЛАМЕНТУ, ТАБЛИЦА 10):";
+
     const text = `
 === РАСЧЕТ КАБЕЛЬНОЙ ПРОХОДКИ PYRO-SAFE FLAMMOTECT (DOUBLE LAYER) ===
 Регламент: ТОВ «ІПВК «СПЕЦЗАХИСТ» / svt Products GmbH (2022)
-Позиция / Марка: ${sleeveTag} (${currentSleeveSpec})
+Позиция / Марка: ${sleeveTag} (${currentSleeveSpec})${countInfo}
 Тип конструкции: ${formValues.isFloorPenetration ? "Перекрытие (≥150 мм)" : "Стена / перегородка (≥100 мм)"}, толщина ${wallThicknessMm} мм
 Форма и размеры: ${dimensionsText}
 Предел огнестойкости: EI 120 (Двухслойная проходка 2 × 60 мм = 120 мм)
 ---
-Площадь проема (S): ${result.openingAreaM2} м² (${result.openingAreaCm2} см² / ${result.openingAreaMm2} мм²)
-Площадь сечения коммуникаций: ${(totalPenetrantsAreaMm2 / 100).toFixed(2)} см² (${result.penetrantsAreaMm2} мм²)
+Площадь 1 проема (S): ${result.singlePenetration.openingAreaM2} м² (${result.singlePenetration.openingAreaCm2} см² / ${result.singlePenetration.openingAreaMm2} мм²)
+${result.count > 1 ? `Суммарный просвет (${result.count} шт.): ${result.openingAreaM2} м² (${result.openingAreaCm2} см²)\n` : ""}Площадь сечения коммуникаций: ${(totalPenetrantsAreaMm2 / 100).toFixed(2)} см² (${(result.penetrantsAreaMm2 / result.count).toFixed(1)} мм²)
 Коэффициент заполнения: ${result.fillRatioPercent}% (лимит не более 60%)
-Состав коммуникаций: ${penetrantsSummary}
+Состав коммуникаций: ${penetrantsSummary}${singleBreakdown}
 ---
-ПОТРЕБНОСТЬ В МАТЕРИАЛАХ ОЗС (ПО РЕГЛАМЕНТУ, ТАБЛИЦА 10):
+${totalsHeader}
 1. FLAMMOTECT-A coating (краска): ${result.coatingMassKg} кг (${result.coatingBucketsCount} вёдер по 12.5 кг)
 2. FLAMMOTECT-A filler (шпаклевка): ${result.fillerMassKg} кг (${result.fillerBucketsCount} вёдер по 12.5 кг)
 3. Минплита 150 кг/м³ (толщина 60 мм, 2 слоя): ${result.boardAreaM2} м²
 4. Рассыпная базальтовая вата: ${result.looseWoolMassKg} кг
-${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG-CR BS: ${result.dgCrBsMeters} пог. м\n` : ""}Контроль: ${result.measurementsCount} контрольных замера толщины гребенкой/штангенциркулем
+${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG-CR BS: ${result.dgCrBsMeters} пог. м\n` : ""}Контроль: ${result.measurementsCount} контрольных замера толщины ${result.count > 1 ? `(по ${result.singlePenetration.measurementsCount} на проходку)` : "гребенкой/штангенциркулем"}
 Дата: ${new Date().toLocaleDateString("ru-RU")}
     `.trim();
 
@@ -372,9 +396,10 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
       .map((p) => `${p.name || "Элемент"} (Ø${p.diameterMm}мм, ${p.count} шт.)`)
       .join(", ");
 
+    const countSuffix = result.count > 1 ? ` × ${result.count} шт.` : "";
     const title =
       positionTitle.trim() ||
-      `Гильза ${sleeveTag}: ${currentSleeveSpec} (${dimensionsText}, зап. ${result.fillRatioPercent}%)`;
+      `Гильза ${sleeveTag}: ${currentSleeveSpec}${countSuffix} (${dimensionsText}, зап. ${result.fillRatioPercent}%)`;
 
     const item: ProjectFlammotectPenetrationItem = {
       id: generateId("flammotect_pen"),
@@ -392,6 +417,7 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
         sleeveTag: sleeveTag.trim() || undefined,
         sleeveSpec: currentSleeveSpec,
         wallThicknessMm,
+        count: result.count,
       },
       result,
     };
@@ -452,16 +478,63 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                   Геометрия проема или гильзы, проверка коэффициента заполнения и расчет заделки ОЗС
                 </p>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-slate-400 font-mono">Марка:</span>
-                <input
-                  type="text"
-                  value={sleeveTag}
-                  onChange={(e) => setSleeveTag(e.target.value)}
-                  placeholder="Г-1"
-                  className="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-rose-400 text-center uppercase focus:outline-none focus:border-rose-500"
-                  title="Маркировка проходки / гильзы в чертежах"
-                />
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-slate-400 font-mono">Марка:</span>
+                  <input
+                    type="text"
+                    value={sleeveTag}
+                    onChange={(e) => setSleeveTag(e.target.value)}
+                    placeholder="Г-1"
+                    className="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-rose-400 text-center uppercase focus:outline-none focus:border-rose-500"
+                    title="Маркировка проходки / гильзы в чертежах"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-1.5 bg-slate-950/80 border border-slate-800 rounded-lg px-2 py-0.5">
+                  <span className="text-xs text-slate-400 font-mono">Кол-во:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = Number(formValues.count) || 1;
+                      setValue("count", Math.max(1, cur - 1));
+                    }}
+                    className="w-5 h-5 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold transition-colors"
+                    title="Уменьшить количество"
+                  >
+                    -
+                  </button>
+                  <Controller
+                    control={control}
+                    name="count"
+                    render={({ field }) => (
+                      <input
+                        type="number"
+                        min="1"
+                        max="1000"
+                        value={field.value ?? 1}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          field.onChange(isNaN(val) ? 1 : Math.max(1, Math.min(1000, val)));
+                        }}
+                        className="w-12 bg-transparent text-center font-mono font-bold text-emerald-400 text-xs focus:outline-none"
+                        title="Количество одинаковых проходок"
+                      />
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = Number(formValues.count) || 1;
+                      setValue("count", Math.min(1000, cur + 1));
+                    }}
+                    className="w-5 h-5 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold transition-colors"
+                    title="Увеличить количество"
+                  >
+                    +
+                  </button>
+                  <span className="text-[11px] text-slate-500 font-mono">шт.</span>
+                </div>
               </div>
             </div>
 
@@ -1084,6 +1157,20 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
 
             {/* Results Output */}
             <div className="space-y-5">
+                {/* Multiplier notification banner */}
+                {result.count > 1 && (
+                  <div className="p-3 bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-semibold text-emerald-300">
+                        Расчет для {result.count} одинаковых проходок ({sleeveTag})
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800/40">
+                      × {result.count} шт.
+                    </span>
+                  </div>
+                )}
 
                 {/* Fill Ratio Gauge */}
                 <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-2">
@@ -1119,19 +1206,32 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                   </div>
 
                   <div className="flex justify-between text-[11px] text-slate-500">
-                    <span>Сечение комун. = {result.penetrantsAreaMm2} мм² ({(result.penetrantsAreaMm2 / 100).toFixed(1)} см²)</span>
+                    <span>Сечение комун. = {(result.penetrantsAreaMm2 / result.count).toFixed(0)} мм² ({(result.penetrantsAreaMm2 / (result.count * 100)).toFixed(1)} см²)</span>
                     <span>Лимит по регламенту: ≤ 60%</span>
                   </div>
 
                   {/* Opening Area Detailed Breakdown */}
-                  <div className="flex justify-between items-center text-xs text-slate-300 pt-2 border-t border-slate-800/70">
-                    <span className="text-slate-400 font-medium">Просвет проема (S):</span>
-                    <span className="font-mono font-bold text-white">
-                      {result.openingAreaM2} м²{" "}
-                      <span className="text-slate-400 font-normal">
-                        ({result.openingAreaCm2} см² / {result.openingAreaMm2} мм²)
+                  <div className="space-y-1.5 pt-2 border-t border-slate-800/70">
+                    <div className="flex justify-between items-center text-xs text-slate-300">
+                      <span className="text-slate-400 font-medium">Просвет 1 проема (S):</span>
+                      <span className="font-mono font-bold text-white">
+                        {result.singlePenetration.openingAreaM2} м²{" "}
+                        <span className="text-slate-400 font-normal">
+                          ({result.singlePenetration.openingAreaCm2} см² / {result.singlePenetration.openingAreaMm2} мм²)
+                        </span>
                       </span>
-                    </span>
+                    </div>
+                    {result.count > 1 && (
+                      <div className="flex justify-between items-center text-xs text-emerald-300">
+                        <span className="font-medium text-emerald-400">Суммарный просвет ({result.count} шт.):</span>
+                        <span className="font-mono font-bold text-emerald-300">
+                          {result.openingAreaM2} м²{" "}
+                          <span className="text-emerald-500/80 font-normal">
+                            ({result.openingAreaCm2} см² / {result.openingAreaMm2} мм²)
+                          </span>
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {result.isBlocked && (
@@ -1155,20 +1255,29 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                           <FormulaTooltip
                             title="FLAMMOTECT-A coating (краска)"
                             formula="M = S_проема × 6.48 кг/м² × K_потерь"
-                            calculation={`${result.openingAreaM2} м² × 6.48 × ${coatingLossFactor} = ${result.coatingMassKg} кг (${result.coatingBucketsCount} вёдер)`}
+                            calculation={
+                              result.count > 1
+                                ? `На 1 шт: ${result.singlePenetration.openingAreaM2} м² × 6.48 × ${coatingLossFactor} = ${result.singlePenetration.coatingMassKg} кг\nВсего (${result.count} шт): ${result.singlePenetration.coatingMassKg} × ${result.count} = ${result.coatingMassKg} кг (${result.coatingBucketsCount} вёдер)`
+                                : `${result.openingAreaM2} м² × 6.48 × ${coatingLossFactor} = ${result.coatingMassKg} кг (${result.coatingBucketsCount} вёдер)`
+                            }
                             notes={`Базовая норма 6.48 кг/м² включает двухстороннюю окраску плит, торцов, кабелей и канта стены 20 мм. Коэффициент потерь при нанесении: ${coatingLossFactor}.`}
                           />
                         </div>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-slate-400 block">
                           Базовая норма 6,48 кг/м² + потери
                         </span>
+                        {result.count > 1 && (
+                          <span className="text-[11px] text-emerald-400 block font-mono mt-0.5">
+                            На 1 шт: {result.singlePenetration.coatingMassKg} кг ({result.singlePenetration.coatingBucketsCount} вед.)
+                          </span>
+                        )}
                       </div>
                       <div className="text-right">
                         <span className="text-lg font-black text-rose-400 font-mono">
                           {result.coatingMassKg} кг
                         </span>
                         <span className="text-[11px] text-slate-500 block font-mono">
-                          ({result.coatingBucketsCount} вёдер по 12.5 кг)
+                          ({result.coatingBucketsCount} вёдер по 12.5 кг){result.count > 1 ? ` • на ${result.count} шт.` : ""}
                         </span>
                       </div>
                     </div>
@@ -1183,20 +1292,29 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                           <FormulaTooltip
                             title="FLAMMOTECT-A filler (шпаклевка)"
                             formula="M = S_проема × 5.00 кг/м² × K_потерь"
-                            calculation={`${result.openingAreaM2} м² × 5.00 × ${coatingLossFactor} = ${result.fillerMassKg} кг (${result.fillerBucketsCount} вёдер)`}
+                            calculation={
+                              result.count > 1
+                                ? `На 1 шт: ${result.singlePenetration.openingAreaM2} м² × 5.00 × ${coatingLossFactor} = ${result.singlePenetration.fillerMassKg} кг\nВсего (${result.count} шт): ${result.singlePenetration.fillerMassKg} × ${result.count} = ${result.fillerMassKg} кг (${result.fillerBucketsCount} вёдер)`
+                                : `${result.openingAreaM2} м² × 5.00 × ${coatingLossFactor} = ${result.fillerMassKg} кг (${result.fillerBucketsCount} вёдер)`
+                            }
                             notes={`Базовая норма 5.00 кг/м² на заделку швов между плитами, щелей вокруг кабелей и склейку стыков. Коэффициент потерь: ${coatingLossFactor}.`}
                           />
                         </div>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-slate-400 block">
                           Базовая норма 5,0 кг/м² для швов и стыков
                         </span>
+                        {result.count > 1 && (
+                          <span className="text-[11px] text-emerald-400 block font-mono mt-0.5">
+                            На 1 шт: {result.singlePenetration.fillerMassKg} кг ({result.singlePenetration.fillerBucketsCount} вед.)
+                          </span>
+                        )}
                       </div>
                       <div className="text-right">
                         <span className="text-lg font-black text-white font-mono">
                           {result.fillerMassKg} кг
                         </span>
                         <span className="text-[11px] text-slate-500 block font-mono">
-                          ({result.fillerBucketsCount} вёдер по 12.5 кг)
+                          ({result.fillerBucketsCount} вёдер по 12.5 кг){result.count > 1 ? ` • на ${result.count} шт.` : ""}
                         </span>
                       </div>
                     </div>
@@ -1211,20 +1329,29 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                           <FormulaTooltip
                             title="Минераловатная плита 150 кг/м³"
                             formula="S_плит = S_проема × 2.0 м²/м² × K_раскроя"
-                            calculation={`${result.openingAreaM2} м² × 2.0 × ${cuttingLossFactor} = ${result.boardAreaM2} м²`}
+                            calculation={
+                              result.count > 1
+                                ? `На 1 шт: ${result.singlePenetration.openingAreaM2} м² × 2.0 × ${cuttingLossFactor} = ${result.singlePenetration.boardAreaM2} м²\nВсего (${result.count} шт): ${result.singlePenetration.boardAreaM2} × ${result.count} = ${result.boardAreaM2} м²`
+                                : `${result.openingAreaM2} м² × 2.0 × ${cuttingLossFactor} = ${result.boardAreaM2} м²`
+                            }
                             notes={`Система Double layer (EI 120, толщина уплотнения 120 мм) состоит из 2 слоев плит по 60 мм. Базовая норма 2.0 м² плиты на 1 м² проходки. Запас на раскрой: ${formValues.includeCuttingLosses ? "+30%" : "0%"}.`}
                           />
                         </div>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-slate-400 block">
                           2 слоя (общая толщина 120 мм, EI 120)
                         </span>
+                        {result.count > 1 && (
+                          <span className="text-[11px] text-emerald-400 block font-mono mt-0.5">
+                            На 1 шт: {result.singlePenetration.boardAreaM2} м²
+                          </span>
+                        )}
                       </div>
                       <div className="text-right">
                         <span className="text-lg font-black text-amber-400 font-mono">
                           {result.boardAreaM2} м²
                         </span>
                         <span className="text-[11px] text-slate-500 block font-mono">
-                          (2 слоя плит)
+                          (2 слоя плит){result.count > 1 ? ` • на ${result.count} шт.` : ""}
                         </span>
                       </div>
                     </div>
@@ -1239,13 +1366,22 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                           <FormulaTooltip
                             title="Рассыпная базальтовая минвата"
                             formula="M = S_проема × 1.52 кг/м² × K_уплотнения"
-                            calculation={`${result.openingAreaM2} м² × 1.52 × ${woolLossFactor} = ${result.looseWoolMassKg} кг`}
+                            calculation={
+                              result.count > 1
+                                ? `На 1 шт: ${result.singlePenetration.openingAreaM2} м² × 1.52 × ${woolLossFactor} = ${result.singlePenetration.looseWoolMassKg} кг\nВсего (${result.count} шт): ${result.singlePenetration.looseWoolMassKg} × ${result.count} = ${result.looseWoolMassKg} кг`
+                                : `${result.openingAreaM2} м² × 1.52 × ${woolLossFactor} = ${result.looseWoolMassKg} кг`
+                            }
                             notes={`Базовая норма 1.52 кг/м² для плотной набивки полостей и зазоров вокруг кабелей по Таблице 10 Регламента. Запас на уплотнение: ${formValues.includeCuttingLosses ? "+30%" : "0%"}.`}
                           />
                         </div>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-slate-400 block">
                           {result.isRoundSleeve ? `Заполнение гильзы (норма 1,52 кг/м²)` : `Набивка зазоров и пустот (1,52 кг/м²)`}
                         </span>
+                        {result.count > 1 && (
+                          <span className="text-[11px] text-emerald-400 block font-mono mt-0.5">
+                            На 1 шт: {result.singlePenetration.looseWoolMassKg} кг
+                          </span>
+                        )}
                       </div>
                       <div className="text-right">
                         <span className="text-lg font-black text-slate-200 font-mono">
@@ -1254,6 +1390,11 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                         {result.looseWoolMassKg < 0.1 && (
                           <span className="text-[10px] text-slate-500 block font-mono">
                             ({(result.looseWoolMassKg * 1000).toFixed(1)} г)
+                          </span>
+                        )}
+                        {result.count > 1 && (
+                          <span className="text-[11px] text-slate-500 block font-mono">
+                            на {result.count} шт.
                           </span>
                         )}
                       </div>
@@ -1270,18 +1411,32 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                             <FormulaTooltip
                               title="Огнезащитная обмотка DG-CR BS"
                               formula="L = ∑ (π × (d/1000) × n_слоев + 0.05) × n_обмоток"
-                              calculation={`∑ (3.1416 × d × слои × ${formValues.isFloorPenetration ? "1" : "2"}) = ${result.dgCrBsMeters} м`}
+                              calculation={
+                                result.count > 1
+                                  ? `На 1 шт: ${result.singlePenetration.dgCrBsMeters} м\nВсего (${result.count} шт): ${result.dgCrBsMeters} м`
+                                  : `∑ (3.1416 × d × слои × ${formValues.isFloorPenetration ? "1" : "2"}) = ${result.dgCrBsMeters} м`
+                              }
                               notes={`Ширина 100 мм для пластиковых труб (Таблицы 13–14). Стены: 2 обмотки с обеих сторон; перекрытия: 1 обмотка снизу. Вспучивание в 15.5–22 раза.`}
                             />
                           </div>
-                          <span className="text-[11px] text-slate-400">
+                          <span className="text-[11px] text-slate-400 block">
                             Ширина 100 мм для пластиковых труб
                           </span>
+                          {result.count > 1 && (
+                            <span className="text-[11px] text-emerald-400 block font-mono mt-0.5">
+                              На 1 шт: {result.singlePenetration.dgCrBsMeters} м
+                            </span>
+                          )}
                         </div>
                         <div className="text-right">
                           <span className="text-lg font-black text-rose-300 font-mono">
                             {result.dgCrBsMeters} м
                           </span>
+                          {result.count > 1 && (
+                            <span className="text-[11px] text-slate-500 block font-mono">
+                              на {result.count} шт.
+                            </span>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1292,7 +1447,7 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                         Контроль качества монтажа (п. 5.1):
                       </span>
                       <div>
-                        • Обязательно провести <strong>{result.measurementsCount} контрольных замера</strong> толщины на данной проходке.
+                        • {result.count > 1 ? `Рекомендуется ${result.singlePenetration.measurementsCount} контрольных замера на 1 проходку (всего ${result.measurementsCount} замеров на ${result.count} шт.)` : `Обязательно провести ${result.measurementsCount} контрольных замера толщины на данной проходке`}.
                       </div>
                       <div>• Световой тест фонарем с обратной стороны — отсутствие щелей.</div>
                       <div>• Межслойная сушка: ≥ 8 часов. Полная полимеризация: 4 суток.</div>

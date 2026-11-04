@@ -227,6 +227,22 @@ export interface FlammotectPenetrationInput {
   isFloorPenetration?: boolean; // Перекрытие (пол/потолок) или стена
   /** Толщина стены/перекрытия (глубина гильзы) в мм */
   wallThicknessMm?: number;
+  /** Количество одинаковых проходок (множитель), по умолчанию 1 */
+  count?: number;
+}
+
+export interface FlammotectSinglePenetrationResult {
+  openingAreaM2: number;
+  openingAreaCm2: number;
+  openingAreaMm2: number;
+  boardAreaM2: number;
+  looseWoolMassKg: number;
+  coatingMassKg: number;
+  coatingBucketsCount: number;
+  fillerMassKg: number;
+  fillerBucketsCount: number;
+  dgCrBsMeters: number;
+  measurementsCount: number;
 }
 
 export interface FlammotectPenetrationResult {
@@ -260,6 +276,10 @@ export interface FlammotectPenetrationResult {
   dgCrBsMeters: number;
   /** Количество рекомендуемых контрольных замеров толщины */
   measurementsCount: number;
+  /** Количество одинаковых проходок (множитель) */
+  count: number;
+  /** Результаты расчета для 1 единичной проходки */
+  singlePenetration: FlammotectSinglePenetrationResult;
 }
 
 /**
@@ -280,7 +300,10 @@ export function calculateFlammotectPenetration(
     includeCuttingLosses = true,
     isFloorPenetration = false,
     wallThicknessMm = 200,
+    count = 1,
   } = input;
+
+  const penetrationCount = Math.max(1, Math.min(1000, Math.floor(count || 1)));
 
   // 1. Площадь сечения проема (просвета гильзы)
   let openingAreaMm2 = 0;
@@ -357,6 +380,20 @@ export function calculateFlammotectPenetration(
       openingAreaM2 < 0.01 ? roundTo(openingAreaM2, 6) : roundTo(openingAreaM2, 4);
     const openingAreaCm2 = roundTo(openingAreaMm2 / 100, 2);
 
+    const singlePenetration: FlammotectSinglePenetrationResult = {
+      openingAreaM2: displayOpeningAreaM2,
+      openingAreaCm2,
+      openingAreaMm2: roundTo(openingAreaMm2, 1),
+      boardAreaM2: 0,
+      looseWoolMassKg: 0,
+      coatingMassKg: 0,
+      coatingBucketsCount: 0,
+      fillerMassKg: 0,
+      fillerBucketsCount: 0,
+      dgCrBsMeters: 0,
+      measurementsCount: 0,
+    };
+
     return {
       openingAreaM2: displayOpeningAreaM2,
       openingAreaCm2,
@@ -377,67 +414,103 @@ export function calculateFlammotectPenetration(
       fillerBucketsCount: 0,
       dgCrBsMeters: 0,
       measurementsCount: 0,
+      count: penetrationCount,
+      singlePenetration,
     };
   }
 
-  // Расчет всех материалов методом пропорции по Таблице 10 Регламента:
+  // Расчет всех материалов на 1 проходку методом пропорции по Таблице 10 Регламента:
   // S_проема (м²) × удельная норма на 1 м² × коэффициент потерь
 
   // 1. Минплита 150 кг/м³ (толщина 60 мм, 2 слоя = 2.0 м² на 1 м²):
-  const boardAreaM2 = roundTo(
+  const singleBoardAreaM2 = roundTo(
     openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.MINERAL_BOARD_M2_PER_M2 * cuttingLossFactor,
     4
   );
 
   // 2. Рассыпная базальтовая минвата (1.52 кг на 1 м²):
-  const looseWoolMassKg = roundTo(
+  const singleLooseWoolMassKg = roundTo(
     openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.LOOSE_WOOL_KG_M2 * woolLossFactor,
     4
   );
 
   // 3. FLAMMOTECT-A coating (6.48 кг на 1 м²):
-  const coatingMassKg = roundTo(
+  const singleCoatingMassKg = roundTo(
     openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.COATING_KG_M2 * coatingLossFactor,
     3
   );
-  const coatingBucketsCount = Math.ceil(coatingMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
+  const singleCoatingBucketsCount = Math.ceil(singleCoatingMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
 
   // 4. FLAMMOTECT-A filler (5.00 кг на 1 м²):
-  const fillerMassKg = roundTo(
+  const singleFillerMassKg = roundTo(
     openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.FILLER_KG_M2 * coatingLossFactor,
     3
   );
-  const fillerBucketsCount = Math.ceil(fillerMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
+  const singleFillerBucketsCount = Math.ceil(singleFillerMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
 
   // Контрольные замеры толщины (п. 5.1): не менее 2 замеров
-  const measurementsCount = Math.max(2, Math.ceil(openingAreaM2 * 2));
+  const singleMeasurementsCount = Math.max(2, Math.ceil(openingAreaM2 * 2));
 
   // Для малых проемов/гильз (< 0.01 м², например Ду 15 - Ду 100) выводим м² с точностью 6 знаков (например, 0.001257 м²),
   // для средних и больших проемов — 4 знака. Площадь в см² выводим с точностью 2 знака (например, 12.57 см²).
-  const displayOpeningAreaM2 =
+  const singleOpeningAreaM2 =
     openingAreaM2 < 0.01 ? roundTo(openingAreaM2, 6) : roundTo(openingAreaM2, 4);
-  const openingAreaCm2 = roundTo(openingAreaMm2 / 100, 2);
+  const singleOpeningAreaCm2 = roundTo(openingAreaMm2 / 100, 2);
+  const singleDgCrBsMeters = roundTo(dgCrBsMeters, 2);
+
+  const singlePenetration: FlammotectSinglePenetrationResult = {
+    openingAreaM2: singleOpeningAreaM2,
+    openingAreaCm2: singleOpeningAreaCm2,
+    openingAreaMm2: roundTo(openingAreaMm2, 1),
+    boardAreaM2: singleBoardAreaM2,
+    looseWoolMassKg: singleLooseWoolMassKg,
+    coatingMassKg: singleCoatingMassKg,
+    coatingBucketsCount: singleCoatingBucketsCount,
+    fillerMassKg: singleFillerMassKg,
+    fillerBucketsCount: singleFillerBucketsCount,
+    dgCrBsMeters: singleDgCrBsMeters,
+    measurementsCount: singleMeasurementsCount,
+  };
+
+  // Расчет суммарных значений с учетом множителя count
+  const totalBoardAreaM2 = roundTo(singleBoardAreaM2 * penetrationCount, 4);
+  const totalLooseWoolMassKg = roundTo(singleLooseWoolMassKg * penetrationCount, 3);
+  const totalCoatingMassKg = roundTo(singleCoatingMassKg * penetrationCount, 3);
+  const totalCoatingBucketsCount = Math.ceil(totalCoatingMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
+  const totalFillerMassKg = roundTo(singleFillerMassKg * penetrationCount, 3);
+  const totalFillerBucketsCount = Math.ceil(totalFillerMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
+  const totalDgCrBsMeters = roundTo(singleDgCrBsMeters * penetrationCount, 2);
+  const totalMeasurementsCount = singleMeasurementsCount * penetrationCount;
+
+  const totalOpeningAreaM2Raw = openingAreaM2 * penetrationCount;
+  const totalOpeningAreaM2 =
+    totalOpeningAreaM2Raw < 0.01 ? roundTo(totalOpeningAreaM2Raw, 6) : roundTo(totalOpeningAreaM2Raw, 4);
+  const totalOpeningAreaCm2 = roundTo((openingAreaMm2 * penetrationCount) / 100, 2);
+  const totalCavityVolumeLiters = roundTo(cavityVolumeLiters * penetrationCount, 2);
+  const totalCavityVolumeM3 = roundTo(cavityVolumeM3 * penetrationCount, 5);
 
   return {
-    openingAreaM2: displayOpeningAreaM2,
-    openingAreaCm2,
-    openingAreaMm2: roundTo(openingAreaMm2, 1),
-    penetrantsAreaMm2: roundTo(penetrantsAreaMm2, 1),
+    openingAreaM2: penetrationCount > 1 ? totalOpeningAreaM2 : singleOpeningAreaM2,
+    openingAreaCm2: penetrationCount > 1 ? totalOpeningAreaCm2 : singleOpeningAreaCm2,
+    openingAreaMm2: roundTo(openingAreaMm2 * penetrationCount, 1),
+    penetrantsAreaMm2: roundTo(penetrantsAreaMm2 * penetrationCount, 1),
     fillRatioPercent: roundTo(fillRatioPercent, 2),
     isBlocked: false,
     validationError,
     isRoundSleeve,
-    cavityVolumeLiters,
-    cavityVolumeM3: roundTo(cavityVolumeM3, 5),
+    cavityVolumeLiters: penetrationCount > 1 ? totalCavityVolumeLiters : cavityVolumeLiters,
+    cavityVolumeM3: penetrationCount > 1 ? totalCavityVolumeM3 : roundTo(cavityVolumeM3, 5),
     boardLayers: 2,
-    boardAreaM2,
-    looseWoolMassKg,
-    coatingMassKg,
-    coatingBucketsCount,
-    fillerMassKg,
-    fillerBucketsCount,
-    dgCrBsMeters: roundTo(dgCrBsMeters, 2),
-    measurementsCount,
+    boardAreaM2: penetrationCount > 1 ? totalBoardAreaM2 : singleBoardAreaM2,
+    looseWoolMassKg: penetrationCount > 1 ? totalLooseWoolMassKg : singleLooseWoolMassKg,
+    coatingMassKg: penetrationCount > 1 ? totalCoatingMassKg : singleCoatingMassKg,
+    coatingBucketsCount: penetrationCount > 1 ? totalCoatingBucketsCount : singleCoatingBucketsCount,
+    fillerMassKg: penetrationCount > 1 ? totalFillerMassKg : singleFillerMassKg,
+    fillerBucketsCount: penetrationCount > 1 ? totalFillerBucketsCount : singleFillerBucketsCount,
+    dgCrBsMeters: penetrationCount > 1 ? totalDgCrBsMeters : singleDgCrBsMeters,
+    measurementsCount: penetrationCount > 1 ? totalMeasurementsCount : singleMeasurementsCount,
+    count: penetrationCount,
+    singlePenetration,
   };
 }
 
