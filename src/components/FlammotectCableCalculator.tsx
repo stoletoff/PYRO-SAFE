@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   flammotectCableFormSchema,
@@ -20,6 +20,8 @@ import {
   Check,
   Copy,
   PlusCircle,
+  Plus,
+  Trash2,
   ShieldCheck,
   Package,
   Layers,
@@ -59,8 +61,22 @@ export function FlammotectCableCalculator({
       shelvesCount: 1,
       dryFilmThicknessMm: 0.5,
       applicationMethod: "brush_10",
+      bundleSizeMode: "auto",
+      bundleCables: [
+        { id: "bc-1", name: "ВВГнгд 3×2.5", diameterMm: 11, count: 4 },
+        { id: "bc-2", name: "ВВГнгд 5×10", diameterMm: 19, count: 2 },
+      ],
     },
     mode: "onChange",
+  });
+
+  const {
+    fields: bundleFields,
+    append: appendBundleField,
+    remove: removeBundleField,
+  } = useFieldArray({
+    control,
+    name: "bundleCables",
   });
 
   const formValues = watch();
@@ -78,6 +94,13 @@ export function FlammotectCableCalculator({
     customRateKgM2: formValues.customRateKgM2
       ? Number(formValues.customRateKgM2)
       : undefined,
+    bundleSizeMode: formValues.bundleSizeMode || "auto",
+    bundleCables: (formValues.bundleCables || []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      diameterMm: Number(c.diameterMm) || 0,
+      count: Number(c.count) || 0,
+    })),
   });
 
   const currentTypeConfig = INSTALLATION_TYPES.find(
@@ -89,13 +112,35 @@ export function FlammotectCableCalculator({
     formValues.installationType === "tray_mesh";
 
   const handleCopy = () => {
+    const isBundle = formValues.installationType === "bundle";
+    const bundleDetails =
+      isBundle && result.bundleSummary
+        ? `Состав пучка: ${result.bundleSummary} (всего ${result.totalBundleCablesCount || 0} шт.)\nРасчетный диаметр пучка D: ${result.calculatedBundleDiameterMm || formValues.dimensionMm} мм\n`
+        : "";
+
+    const sizeLabel =
+      isBundle
+        ? `Диаметр пучка d: ${result.calculatedBundleDiameterMm || formValues.dimensionMm} мм`
+        : formValues.installationType === "single"
+        ? `Диаметр кабеля d: ${formValues.dimensionMm} мм`
+        : `Ширина лотка b: ${formValues.dimensionMm} мм`;
+
+    const countLine =
+      formValues.installationType === "single"
+        ? `Количество кабелей (N): ${formValues.cableCount} шт.\n`
+        : isBundle && (formValues.cableCount || 1) > 1
+        ? `Количество параллельных пучков: ${formValues.cableCount} шт.\n`
+        : isTray
+        ? `Количество полок короба: ${formValues.shelvesCount} шт.\n`
+        : "";
+
     const text = `
 === РАСЧЕТ ОГНЕЗАЩИТЫ КАБЕЛЕЙ PYRO-SAFE FLAMMOTECT-A ===
 Регламент: ТОВ «ІПВК «СПЕЦЗАХИСТ» / svt Products GmbH (2022)
 Тип прокладки: ${currentTypeConfig.title}
-Длина трассы (L): ${formValues.lengthM} м
-Размер (${formValues.installationType === "single" || formValues.installationType === "bundle" ? "Диаметр d" : "Ширина b"}): ${formValues.dimensionMm} мм
-${formValues.installationType === "single" ? `Количество кабелей (N): ${formValues.cableCount} шт.\n` : ""}${isTray ? `Количество полок короба: ${formValues.shelvesCount} шт.\n` : ""}Толщина сухого слоя (DFT): ${formValues.dryFilmThicknessMm} мм
+${bundleDetails}Длина трассы (L): ${formValues.lengthM} м
+Размер (${sizeLabel})
+${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThicknessMm} мм
 Контрольная толщина мокрого слоя (WFT): ${result.wetFilmThicknessMm} мм (гребенка)
 Способ нанесения: ${FLAMMOTECT_APPLICATION_LOSSES[formValues.applicationMethod]?.label}
 ---
@@ -116,9 +161,18 @@ ${formValues.installationType === "single" ? `Количество кабеле�
   const handleAddPosition = () => {
     if (!onAddToProject) return;
 
-    const title =
-      positionTitle.trim() ||
-      `${currentTypeConfig.title} (FLAMMOTECT-A, L=${formValues.lengthM}м, S=${result.areaM2}м²)`;
+    const isBundle = formValues.installationType === "bundle";
+    const effectiveDia =
+      isBundle
+        ? result.calculatedBundleDiameterMm || Number(formValues.dimensionMm)
+        : Number(formValues.dimensionMm);
+
+    const defaultTitle =
+      isBundle && result.bundleSummary
+        ? `Пучок кабелей: ${result.bundleSummary} (D=${effectiveDia}мм, L=${formValues.lengthM}м, S=${result.areaM2}м²)`
+        : `${currentTypeConfig.title} (FLAMMOTECT-A, L=${formValues.lengthM}м, S=${result.areaM2}м²)`;
+
+    const title = positionTitle.trim() || defaultTitle;
 
     const item: ProjectFlammotectCableItem = {
       id: generateId("flammotect_cable"),
@@ -128,13 +182,15 @@ ${formValues.installationType === "single" ? `Количество кабеле�
       details: {
         installationTypeName: currentTypeConfig.title,
         lengthM: Number(formValues.lengthM),
-        dimensionMm: Number(formValues.dimensionMm),
+        dimensionMm: effectiveDia,
         cableCount: Number(formValues.cableCount) || 1,
         shelvesCount: Number(formValues.shelvesCount) || 1,
         dryFilmThicknessMm: Number(formValues.dryFilmThicknessMm),
         applicationMethodName:
           FLAMMOTECT_APPLICATION_LOSSES[formValues.applicationMethod]?.label ||
           "Кисть / валик",
+        bundleSummary: result.bundleSummary,
+        bundleCablesCount: result.totalBundleCablesCount,
       },
       result,
     };
@@ -257,35 +313,340 @@ ${formValues.installationType === "single" ? `Количество кабеле�
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="text-xs font-medium text-slate-300">
-                      {currentTypeConfig.dimensionLabel}
+                      {formValues.installationType === "bundle" && formValues.bundleSizeMode !== "manual"
+                        ? "Расчетный диаметр пучка (D), мм"
+                        : currentTypeConfig.dimensionLabel}
                     </label>
-                    <span className="text-[11px] text-slate-500">В миллиметрах</span>
+                    <span className="text-[11px] text-teal-400 font-mono">
+                      {formValues.installationType === "bundle" && formValues.bundleSizeMode !== "manual"
+                        ? "Формула жгута"
+                        : "В миллиметрах"}
+                    </span>
                   </div>
-                  <Controller
-                    control={control}
-                    name="dimensionMm"
-                    render={({ field }) => (
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="any"
-                          min="1"
-                          placeholder={currentTypeConfig.defaultDimension.toString()}
-                          value={field.value ?? ""}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
-                        />
-                        <span className="absolute right-3.5 top-2.5 text-xs text-slate-500 font-mono">
-                          мм
-                        </span>
-                      </div>
-                    )}
-                  />
+                  {formValues.installationType === "bundle" && formValues.bundleSizeMode !== "manual" ? (
+                    <div className="relative">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`${result.calculatedBundleDiameterMm || formValues.dimensionMm} мм`}
+                        className="w-full bg-slate-950/80 border border-teal-500/40 rounded-xl px-3.5 py-2.5 text-sm text-teal-300 font-mono font-bold cursor-default focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-2.5 px-2 py-0.5 rounded bg-teal-950 text-teal-300 text-[10px] font-mono border border-teal-800/40">
+                        Авто
+                      </span>
+                    </div>
+                  ) : (
+                    <Controller
+                      control={control}
+                      name="dimensionMm"
+                      render={({ field }) => (
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            min="1"
+                            placeholder={currentTypeConfig.defaultDimension.toString()}
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
+                          />
+                          <span className="absolute right-3.5 top-2.5 text-xs text-slate-500 font-mono">
+                            мм
+                          </span>
+                        </div>
+                      )}
+                    />
+                  )}
                   {errors.dimensionMm && (
                     <p className="text-xs text-red-400 mt-1">{errors.dimensionMm.message}</p>
                   )}
                 </div>
               </div>
+
+              {/* Bundle Composition Panel */}
+              {formValues.installationType === "bundle" && (
+                <div className="p-4 bg-slate-950/90 border border-teal-800/40 rounded-2xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <Layers className="w-4 h-4 text-teal-400" />
+                        <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                          Состав пучка кабелей (п. 3.2.3 Регламента)
+                        </h3>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Укажите кабели в пучке (диаметр и количество). Диаметр жгута вычисляется автоматически.
+                      </p>
+                    </div>
+
+                    {/* Mode switcher tabs */}
+                    <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 shrink-0 self-start sm:self-center">
+                      <button
+                        type="button"
+                        onClick={() => setValue("bundleSizeMode", "auto")}
+                        className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                          formValues.bundleSizeMode !== "manual"
+                            ? "bg-teal-600 text-white shadow-sm"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        По кабелям
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setValue("bundleSizeMode", "manual")}
+                        className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                          formValues.bundleSizeMode === "manual"
+                            ? "bg-teal-600 text-white shadow-sm"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        Вручную
+                      </button>
+                    </div>
+                  </div>
+
+                  {formValues.bundleSizeMode !== "manual" ? (
+                    <div className="space-y-3">
+                      {/* Cable items list */}
+                      <div className="space-y-2">
+                        {bundleFields.map((fieldItem, idx) => (
+                          <div
+                            key={fieldItem.id}
+                            className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+                          >
+                            <div className="flex-1">
+                              <Controller
+                                control={control}
+                                name={`bundleCables.${idx}.name`}
+                                render={({ field }) => (
+                                  <input
+                                    type="text"
+                                    placeholder={`Кабель ${idx + 1}`}
+                                    value={field.value ?? ""}
+                                    onChange={field.onChange}
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-teal-500"
+                                  />
+                                )}
+                              />
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-1">
+                                <span className="text-[11px] text-slate-400 font-mono">Ø:</span>
+                                <Controller
+                                  control={control}
+                                  name={`bundleCables.${idx}.diameterMm`}
+                                  render={({ field }) => (
+                                    <div className="relative">
+                                      <input
+                                        type="number"
+                                        step="any"
+                                        min="1"
+                                        max="500"
+                                        placeholder="Диаметр"
+                                        value={field.value ?? ""}
+                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                        className="w-20 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white text-right font-mono focus:outline-none focus:border-teal-500"
+                                      />
+                                      <span className="text-[10px] text-slate-500 absolute right-2 top-2 pointer-events-none font-mono">
+                                        мм
+                                      </span>
+                                    </div>
+                                  )}
+                                />
+                              </div>
+
+                              <div className="flex items-center space-x-1">
+                                <span className="text-[11px] text-slate-400 font-mono">Кол-во:</span>
+                                <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const cur = Number(formValues.bundleCables?.[idx]?.count) || 1;
+                                      setValue(`bundleCables.${idx}.count`, Math.max(1, cur - 1));
+                                    }}
+                                    className="w-6 h-7 flex items-center justify-center text-slate-400 hover:text-white text-xs font-bold transition-colors"
+                                    title="Уменьшить количество"
+                                  >
+                                    -
+                                  </button>
+                                  <Controller
+                                    control={control}
+                                    name={`bundleCables.${idx}.count`}
+                                    render={({ field }) => (
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        max="1000"
+                                        value={field.value ?? 1}
+                                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                                        className="w-10 bg-transparent text-center text-xs font-mono font-bold text-teal-400 focus:outline-none"
+                                      />
+                                    )}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const cur = Number(formValues.bundleCables?.[idx]?.count) || 1;
+                                      setValue(`bundleCables.${idx}.count`, cur + 1);
+                                    }}
+                                    className="w-6 h-7 flex items-center justify-center text-slate-400 hover:text-white text-xs font-bold transition-colors"
+                                    title="Увеличить количество"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <span className="text-[11px] text-slate-500 font-mono">шт.</span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => removeBundleField(idx)}
+                                disabled={bundleFields.length <= 1}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-800 disabled:opacity-20 transition-colors"
+                                title="Удалить строку кабеля"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Add cable button */}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            appendBundleField({
+                              id: generateId("bc"),
+                              name: "Кабель",
+                              diameterMm: 16,
+                              count: 1,
+                            })
+                          }
+                          className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-teal-950/70 hover:bg-teal-900 border border-teal-800/50 text-teal-300 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" />
+                          Добавить кабель в пучок
+                        </button>
+                      </div>
+
+                      {/* Quick popular cable chips */}
+                      <div className="pt-2 border-t border-slate-800/70">
+                        <span className="text-[10px] text-slate-400 font-medium block mb-1.5">
+                          Быстрый выбор из каталога (клик для добавления в пучок):
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { name: "ВВГнгд 3×2.5", dia: 11 },
+                            { name: "ВВГнгд 5×6", dia: 16 },
+                            { name: "ВВГнгд 5×10", dia: 19 },
+                            { name: "ВВГнгд 4×25", dia: 24 },
+                            { name: "(N)HXH FE180 3×2.5", dia: 12.5 },
+                            { name: "(N)HXH FE180 5×16", dia: 23 },
+                            { name: "АВВГ 4×70", dia: 32 },
+                          ].map((c, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() =>
+                                appendBundleField({
+                                  id: generateId("bc"),
+                                  name: c.name,
+                                  diameterMm: c.dia,
+                                  count: 1,
+                                })
+                              }
+                              className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 transition-colors"
+                            >
+                              <span>{c.name}</span>
+                              <span className="font-mono text-teal-400">Ø{c.dia}</span>
+                              <Plus className="w-3 h-3 text-slate-500" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Realtime calculation banner */}
+                      <div className="p-3 bg-gradient-to-r from-teal-950/40 via-slate-900 to-slate-900 border border-teal-800/40 rounded-xl space-y-1.5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                          <span className="text-slate-300">
+                            Всего в пучке:{" "}
+                            <strong className="text-white font-mono">
+                              {result.totalBundleCablesCount || 0} шт. кабелей
+                            </strong>
+                          </span>
+                          <span className="text-teal-300 font-bold font-mono">
+                            Расчетный диаметр пучка: D = {result.calculatedBundleDiameterMm || formValues.dimensionMm} мм
+                          </span>
+                        </div>
+                        <div className="font-mono text-[11px] text-emerald-400 bg-slate-950/80 p-2 rounded border border-slate-800/80 leading-relaxed">
+                          Формула жгута: D = 1.15 × √(∑ n_i × d_i²) ={" "}
+                          {result.calculatedBundleDiameterMm || formValues.dimensionMm} мм
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          Нормативный расчет по п. 3.2.3 Регламента 2022: S = L × π × D × 1.5 (коэффициент пучка 1.5).
+                        </p>
+                      </div>
+
+                      {/* Number of identical parallel bundles */}
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                        <div>
+                          <label className="text-xs font-medium text-slate-300 block">
+                            Количество одинаковых параллельных пучков
+                          </label>
+                          <span className="text-[11px] text-slate-500">
+                            Если по трассе проложено несколько таких пучков
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cur = Number(formValues.cableCount) || 1;
+                              setValue("cableCount", Math.max(1, cur - 1));
+                            }}
+                            className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold transition-colors"
+                          >
+                            -
+                          </button>
+                          <Controller
+                            control={control}
+                            name="cableCount"
+                            render={({ field }) => (
+                              <input
+                                type="number"
+                                min="1"
+                                max="100"
+                                value={field.value ?? 1}
+                                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                                className="w-12 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs font-mono font-bold text-teal-400 focus:outline-none"
+                              />
+                            )}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cur = Number(formValues.cableCount) || 1;
+                              setValue("cableCount", cur + 1);
+                            }}
+                            className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold transition-colors"
+                          >
+                            +
+                          </button>
+                          <span className="text-xs text-slate-400 font-mono">шт.</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400">
+                      Укажите габаритный диаметр пучка в поле ввода выше («{currentTypeConfig.dimensionLabel}»).
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Single cable count */}
               {formValues.installationType === "single" && (
@@ -428,6 +789,33 @@ ${formValues.installationType === "single" ? `Количество кабеле�
               <span className="text-xs font-mono text-teal-400">FLAMMOTECT-A</span>
             </div>
 
+            {/* Bundle summary banner */}
+            {formValues.installationType === "bundle" && (
+              <div className="p-3 bg-gradient-to-r from-teal-950/60 to-slate-900 border border-teal-500/30 rounded-xl space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-teal-300 flex items-center">
+                    <Layers className="w-3.5 h-3.5 mr-1.5" />
+                    Пучок кабелей (п. 3.2.3)
+                  </span>
+                  <span className="text-[11px] font-mono font-bold text-teal-400 bg-teal-950 px-2 py-0.5 rounded border border-teal-800/40">
+                    D = {result.calculatedBundleDiameterMm || formValues.dimensionMm} мм
+                  </span>
+                </div>
+                {result.bundleSummary && (
+                  <p className="text-[11px] text-slate-300 font-mono">
+                    {result.bundleSummary}
+                  </p>
+                )}
+                <div className="text-[10px] text-slate-400 pt-1 border-t border-teal-900/40 flex justify-between">
+                  <span>
+                    Всего кабелей: {result.totalBundleCablesCount || 0} шт.
+                    {(formValues.cableCount || 1) > 1 ? ` • ${formValues.cableCount} пучка` : ""}
+                  </span>
+                  <span>Коэф. пучка: 1.5</span>
+                </div>
+              </div>
+            )}
+
             {/* Main Key Figures */}
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3.5 bg-slate-950/80 border border-slate-800/80 rounded-xl">
@@ -487,6 +875,16 @@ ${formValues.installationType === "single" ? `Количество кабеле�
                   <strong className="text-slate-300 font-mono">12,5 кг</strong>
                 </div>
               </div>
+            </div>
+
+            {/* Formula explanation box */}
+            <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-1 text-xs">
+              <span className="text-[10px] uppercase font-mono text-slate-400 block">
+                Формула расчета площади (п. 3.2 Регламента):
+              </span>
+              <p className="font-mono text-emerald-400 text-[11px] leading-relaxed break-words">
+                {result.formulaExplanation}
+              </p>
             </div>
 
             {/* Quality control guidelines */}

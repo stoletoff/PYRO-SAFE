@@ -47,16 +47,51 @@ export const FLAMMOTECT_APPLICATION_LOSSES = {
 
 export type FlammotectApplicationMethod = keyof typeof FLAMMOTECT_APPLICATION_LOSSES;
 
+export interface BundleCableItem {
+  id: string;
+  name?: string;
+  diameterMm: number;
+  count: number;
+}
+
+/**
+ * Расчет эквивалентного наружного диаметра пучка кабелей (в мм)
+ * по формуле плотной круговой укладки жгута с коэффициентом заполнения k_упаковки ≈ 0.75:
+ * D_пучка = 1.15 × √(∑ n_i × d_i²)
+ * Для 1 кабеля: D = d_1.
+ */
+export function calculateBundleDiameterMm(cables: BundleCableItem[]): number {
+  const valid = cables.filter((c) => c.diameterMm > 0 && c.count > 0);
+  if (valid.length === 0) return 0;
+
+  const totalCablesCount = valid.reduce((acc, c) => acc + c.count, 0);
+  if (totalCablesCount === 1) {
+    return valid[0].diameterMm;
+  }
+
+  const sumSquared = valid.reduce((acc, c) => acc + c.count * c.diameterMm * c.diameterMm, 0);
+  const maxSingleDiameter = Math.max(...valid.map((c) => c.diameterMm));
+  // Коэффициент пустотности плотного жгута 1.15 по нормам монтажа кабельных пучков
+  const calculated = 1.15 * Math.sqrt(sumSquared);
+
+  // Диаметр пучка не может быть меньше диаметра самого толстого кабеля в нем
+  return roundTo(Math.max(maxSingleDiameter, calculated), 1);
+}
+
 export interface FlammotectCableInput {
   installationType: CableInstallationType;
   /** Длина кабельной трассы (L) в метрах */
   lengthM: number;
   /** Внешний диаметр кабеля/пучка (d) или ширина лотка (b) в мм */
   dimensionMm: number;
-  /** Количество кабелей (для одиночной прокладки) */
+  /** Количество кабелей (для одиночной прокладки) или количество параллельных пучков */
   cableCount?: number;
   /** Количество полок/ярусов в коробе (по п. 3.2.1 регламента) */
   shelvesCount?: number;
+  /** Состав кабелей в пучке (для типа 'bundle') */
+  bundleCables?: BundleCableItem[];
+  /** Режим задания диаметра пучка: 'auto' (по кабелям) или 'manual' (вручную) */
+  bundleSizeMode?: "auto" | "manual";
   /** Целевая толщина сухого слоя (мм), по умолчанию 0.5 мм или 1.0 мм */
   dryFilmThicknessMm: number;
   /** Способ нанесения */
@@ -82,6 +117,12 @@ export interface FlammotectCableResult {
   formulaExplanation: string;
   /** Рекомендованное минимальное количество точек замера толщины */
   recommendedMeasurementsCount: number;
+  /** Расчетный диаметр пучка (если тип 'bundle') */
+  calculatedBundleDiameterMm?: number;
+  /** Суммарное количество кабелей в пучке */
+  totalBundleCablesCount?: number;
+  /** Текстовая сводка состава пучка (например, "4 × Ø11мм, 2 × Ø19мм") */
+  bundleSummary?: string;
 }
 
 /**
@@ -95,12 +136,30 @@ export function calculateFlammotectCableLine(input: FlammotectCableInput): Flamm
     dimensionMm,
     cableCount = 1,
     shelvesCount = 1,
+    bundleCables,
+    bundleSizeMode = "auto",
     dryFilmThicknessMm = 0.5,
     applicationMethod = "brush_10",
     customRateKgM2,
   } = input;
 
-  if (lengthM <= 0 || dimensionMm <= 0) {
+  let effectiveDimensionMm = dimensionMm;
+  let bundleSummary: string | undefined;
+  let totalBundleCablesCount: number | undefined;
+
+  if (installationType === "bundle" && bundleCables && bundleCables.length > 0 && bundleSizeMode !== "manual") {
+    const autoDia = calculateBundleDiameterMm(bundleCables);
+    if (autoDia > 0) {
+      effectiveDimensionMm = autoDia;
+    }
+    totalBundleCablesCount = bundleCables.reduce((acc, c) => acc + (Number(c.count) || 0), 0);
+    bundleSummary = bundleCables
+      .filter((c) => c.diameterMm > 0 && c.count > 0)
+      .map((c) => `${c.count}×Ø${c.diameterMm}мм${c.name ? ` (${c.name})` : ""}`)
+      .join(", ");
+  }
+
+  if (lengthM <= 0 || effectiveDimensionMm <= 0) {
     return {
       areaM2: 0,
       wetFilmThicknessMm: 0,
@@ -110,10 +169,13 @@ export function calculateFlammotectCableLine(input: FlammotectCableInput): Flamm
       flammotectBucketsCount: 0,
       formulaExplanation: "Некорректные входные данные (длина или диаметр <= 0).",
       recommendedMeasurementsCount: 0,
+      calculatedBundleDiameterMm: installationType === "bundle" ? effectiveDimensionMm : undefined,
+      totalBundleCablesCount,
+      bundleSummary,
     };
   }
 
-  const dimensionM = dimensionMm / 1000;
+  const dimensionM = effectiveDimensionMm / 1000;
   const count = Math.max(1, cableCount);
   const shelves = Math.max(1, shelvesCount);
 
@@ -128,9 +190,13 @@ export function calculateFlammotectCableLine(input: FlammotectCableInput): Flamm
       break;
     }
     case "bundle": {
-      // S = L * π * d * 1.5 (п. 3.2.3)
-      areaM2 = lengthM * 3.1416 * dimensionM * 1.5;
-      formulaExplanation = `S = L × π × d × 1.5 = ${lengthM} м × 3.1416 × ${dimensionM.toFixed(4)} м × 1.5 (коэф. пучка)`;
+      // S = L * π * d * 1.5 * N_пучков (п. 3.2.3)
+      areaM2 = lengthM * 3.1416 * dimensionM * 1.5 * count;
+      if (bundleSummary) {
+        formulaExplanation = `S = L × π × D × 1.5${count > 1 ? ` × ${count} пучка` : ""} = ${lengthM} м × 3.1416 × ${dimensionM.toFixed(4)} м × 1.5${count > 1 ? ` × ${count}` : ""} = ${roundTo(areaM2, 3)} м² [Пучок: ${bundleSummary}, D = 1.15×√(∑n·d²) = ${effectiveDimensionMm} мм]`;
+      } else {
+        formulaExplanation = `S = L × π × d × 1.5${count > 1 ? ` × ${count} пучка` : ""} = ${lengthM} м × 3.1416 × ${dimensionM.toFixed(4)} м × 1.5 (коэф. пучка)`;
+      }
       break;
     }
     case "tray_solid": {
@@ -176,6 +242,9 @@ export function calculateFlammotectCableLine(input: FlammotectCableInput): Flamm
     flammotectBucketsCount,
     formulaExplanation,
     recommendedMeasurementsCount,
+    calculatedBundleDiameterMm: installationType === "bundle" ? effectiveDimensionMm : undefined,
+    totalBundleCablesCount,
+    bundleSummary,
   };
 }
 

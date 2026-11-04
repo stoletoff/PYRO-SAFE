@@ -54,6 +54,9 @@ export function ProjectSummary({
     items.forEach((item, idx) => {
       if (item.type === "cable_flammotect") {
         text += `${idx + 1}. [Кабельная линия FLAMMOTECT-A] ${item.title}\n`;
+        if (item.details.bundleSummary) {
+          text += `   - Состав пучка: ${item.details.bundleSummary} (D = ${item.details.dimensionMm} мм)\n`;
+        }
         text += `   - Длина: ${item.details.lengthM} м, S = ${item.result.areaM2} м², сухой слой: ${item.details.dryFilmThicknessMm} мм\n`;
         text += `   - FLAMMOTECT-A: ${item.result.flammotectMassKg} кг (${item.result.flammotectBucketsCount} вёдер по 12.5 кг)\n`;
       } else if (item.type === "penetration_flammotect") {
@@ -104,7 +107,10 @@ export function ProjectSummary({
 
     items.forEach((item, idx) => {
       if (item.type === "cable_flammotect") {
-        csv += `${idx + 1},"${item.title.replace(/"/g, '""')}","Кабели FLAMMOTECT-A","L=${item.details.lengthM}м, DFT=${item.details.dryFilmThicknessMm}мм",${item.result.areaM2},${item.result.flammotectMassKg},0,0,0,0\n`;
+        const desc = item.details.bundleSummary
+          ? `Пучок [${item.details.bundleSummary}] D=${item.details.dimensionMm}мм, L=${item.details.lengthM}м`
+          : `L=${item.details.lengthM}м, DFT=${item.details.dryFilmThicknessMm}мм`;
+        csv += `${idx + 1},"${item.title.replace(/"/g, '""')}","Кабели FLAMMOTECT-A","${desc.replace(/"/g, '""')}",${item.result.areaM2},${item.result.flammotectMassKg},0,0,0,0\n`;
       } else if (item.type === "penetration_flammotect") {
         const countStr = item.details.count && item.details.count > 1 ? ` (${item.details.count} шт.)` : "";
         const spec = item.details.sleeveTag
@@ -376,7 +382,9 @@ export function ProjectSummary({
                     systemColor = "bg-teal-950/80 text-teal-300 border-teal-800/40";
                     area = item.result.areaM2;
                     flammotectKg = `${item.result.flammotectMassKg} (${item.result.flammotectBucketsCount}в)`;
-                    paramsText = `L=${item.details.lengthM}м, DFT=${item.details.dryFilmThicknessMm}мм`;
+                    paramsText = item.details.bundleSummary
+                      ? `Пучок: ${item.details.bundleSummary}, D=${item.details.dimensionMm}мм, L=${item.details.lengthM}м`
+                      : `L=${item.details.lengthM}м, DFT=${item.details.dryFilmThicknessMm}мм`;
                   } else if (item.type === "penetration_flammotect") {
                     systemLabel = "Double Layer EI 120";
                     systemColor = "bg-rose-950/80 text-rose-300 border-rose-800/40";

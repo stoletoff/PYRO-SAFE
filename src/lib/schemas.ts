@@ -4,6 +4,22 @@ import { z } from "zod";
 // СХЕМЫ ДЛЯ FLAMMOTECT-A (РЕГЛАМЕНТ 2022)
 // ==========================================
 
+export const bundleCableItemSchema = z.object({
+  id: z.string(),
+  name: z.string().optional(),
+  diameterMm: z
+    .number({ invalid_type_error: "Диаметр" })
+    .positive("Диаметр > 0")
+    .max(500, "Диаметр <= 500 мм"),
+  count: z
+    .number({ invalid_type_error: "Кол-во" })
+    .int("Целое число")
+    .min(1, "Минимум 1")
+    .max(1000, "Не более 1000 шт."),
+});
+
+export type BundleCableItemFormData = z.infer<typeof bundleCableItemSchema>;
+
 export const flammotectCableFormSchema = z.object({
   installationType: z.enum(["single", "bundle", "tray_solid", "tray_mesh"], {
     required_error: "Выберите тип прокладки кабеля",
@@ -31,6 +47,8 @@ export const flammotectCableFormSchema = z.object({
     .max(5.0, "Максимальная толщина 5.0 мм"),
   applicationMethod: z.enum(["brush_5", "brush_10", "sprayer_30"]),
   customRateKgM2: z.number().optional(),
+  bundleSizeMode: z.enum(["auto", "manual"]).optional(),
+  bundleCables: z.array(bundleCableItemSchema).optional(),
 });
 
 export type FlammotectCableFormData = z.infer<typeof flammotectCableFormSchema>;

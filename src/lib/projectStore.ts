@@ -21,6 +21,8 @@ export interface ProjectFlammotectCableItem {
     shelvesCount: number;
     dryFilmThicknessMm: number;
     applicationMethodName: string;
+    bundleSummary?: string;
+    bundleCablesCount?: number;
   };
   result: FlammotectCableResult;
 }
