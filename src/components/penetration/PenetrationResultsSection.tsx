@@ -268,7 +268,7 @@ export function PenetrationResultsSection({ calc }: PenetrationResultsSectionPro
                         ? `На 1 шт: ${result.singlePenetration.openingAreaM2} м² × 1.52 × ${woolLossFactor} = ${result.singlePenetration.looseWoolMassKg} кг\nВсего (${result.count} шт): ${result.singlePenetration.looseWoolMassKg} × ${result.count} = ${result.looseWoolMassKg} кг`
                         : `${result.openingAreaM2} м² × 1.52 × ${woolLossFactor} = ${result.looseWoolMassKg} кг`
                     }
-                    notes={`Базовая норма 1.52 кг/м² для плотной набивки полостей и зазоров вокруг кабелей по Таблице 10 Регламента. Запас на уплотнение: ${formValues.includeCuttingLosses ? "+30%" : "0%"}.`}
+                    notes={`Базовая норма 1.52 кг/м² для плотной набивки полостей и зазоров вокруг кабелей по п. 3.1 Регламента (Double layer). Запас на уплотнение: ${formValues.includeCuttingLosses ? "+30%" : "0%"}.`}
                   />
                 </div>
                 <span className="text-[11px] text-slate-400 block">
@@ -313,7 +313,7 @@ export function PenetrationResultsSection({ calc }: PenetrationResultsSectionPro
                           ? `На 1 шт: ${result.singlePenetration.dgCrBsMeters} м\nВсего (${result.count} шт): ${result.dgCrBsMeters} м`
                           : `∑ (3.1416 × d × слои × ${formValues.isFloorPenetration ? "1" : "2"}) = ${result.dgCrBsMeters} м`
                       }
-                      notes={`Ширина 100 мм для пластиковых труб (Таблицы 13–14). Стены: 2 обмотки с обеих сторон; перекрытия: 1 обмотка снизу. Вспучивание в 15.5–22 раза.`}
+                      notes={`Ширина 100 мм для пластиковых труб (п. 2.1, Таблицы 3, 5, 9, 10 Регламента). Стены: 2 обмотки с обеих сторон; перекрытия: 1 обмотка снизу. Вспучивание в 15.5–22 раза.`}
                     />
                   </div>
                   <span className="text-[11px] text-slate-400 block">

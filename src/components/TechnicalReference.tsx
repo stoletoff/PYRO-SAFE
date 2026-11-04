@@ -76,7 +76,7 @@ export function TechnicalReference() {
               </div>
               <div className="flex justify-between">
                 <span>Норма на 1 м² проходки:</span>
-                <strong className="text-white font-mono">6,48 кг/м² (Таблица 10)</strong>
+                <strong className="text-white font-mono">6,48 кг/м² (п. 3.1 Регламента)</strong>
               </div>
               <div className="flex justify-between">
                 <span>Плотность состава:</span>
@@ -156,7 +156,7 @@ export function TechnicalReference() {
               </div>
               <div className="flex justify-between">
                 <span>Расход на 1 м² проходки:</span>
-                <strong className="text-white font-mono">5,00 кг/м² (Таблица 10)</strong>
+                <strong className="text-white font-mono">5,00 кг/м² (п. 3.1 Регламента)</strong>
               </div>
             </div>
           </div>
@@ -231,10 +231,71 @@ export function TechnicalReference() {
             </div>
           </div>
 
-          <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start space-x-2 text-xs text-slate-400">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <strong>Метод расчета по Регламенту:</strong> Потребность во всех материалах ОЗС рассчитывается пропорционально фактической площади просвета проходки $S$ (в м²) по удельным нормативам Таблицы 10 Регламента.
+          {/* Exact normative regulation clauses */}
+          <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3 text-xs text-slate-300">
+            <div className="flex items-center space-x-2 text-emerald-400 font-bold border-b border-slate-800 pb-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Нормативные пункты расчета и расхода по Регламентам (ТОВ «ІПВК «СПЕЦЗАХИСТ» / svt, 2022 г.):</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] leading-relaxed">
+              <div className="space-y-1.5 p-3 rounded-lg bg-slate-900/60 border border-slate-850">
+                <strong className="text-rose-400 block font-mono">
+                  Проходки «Double Layer» (EI 120):
+                </strong>
+                <ul className="space-y-1 text-slate-400">
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 1.3, п. 2.1</strong> — суммарное сечение кабелей и труб в проеме не должно превышать <strong>60%</strong> площади проходки.
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 3.1</strong> — базовые нормы расхода на 1 м² проходки:
+                    <span className="text-white block font-mono pl-2">
+                      • Минплита 150 кг/м³ (2×60 мм): 2,0 м²<br />
+                      • FLAMMOTECT-A coating (краска): 6,48 кг<br />
+                      • FLAMMOTECT-A filler (шпаклевка): 5,0 кг<br />
+                      • Минвата базальтовая (набивка): 1,52 кг
+                    </span>
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 3.1</strong> — потери: кисть/шпатель +5...10%, безвоздушное распыление до +30%; раскрой плит и уплотнение ваты до +30%.
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 3.2</strong> — расчет потребности во всех материалах проходки выполняется на основании удельных норм п. 3.1.
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 4.6, Табл. 12</strong> — окраска кабелей составом FLAMMOTECT-A (сухой слой ≥ 2,0 мм) на длину 500 мм от проходки.
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">Таблицы 3, 5, 9, 10</strong> — защита полимерных горючих труб терморасширяющимся бандажом DG-CR BS.
+                  </li>
+                </ul>
+              </div>
+
+              <div className="space-y-1.5 p-3 rounded-lg bg-slate-900/60 border border-slate-850">
+                <strong className="text-teal-400 block font-mono">
+                  Огнезащита кабелей «FLAMMOTECT-A»:
+                </strong>
+                <ul className="space-y-1 text-slate-400">
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 3.1</strong> — удельный расход краски: 1,26 кг/м² при DFT 0,5 мм (2,52 кг/м² при DFT 1,0 мм).
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 3.2.1</strong> — лоток/короб с глухим дном: S = L × b × 1,5 × N_полок (для сетчатого: × 2 сторон).
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 3.2.2</strong> — одиночный кабель: S = L × π × d × N.
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 3.2.3</strong> — кабели в пучке: S = L × π × D × 1,5 (коэф. развитой поверхности пучка 1,5).
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 4.9</strong> — защитный лак не требуется (100% стойкость к влаге, циклам заморозки и УФ).
+                  </li>
+                  <li>
+                    <strong className="text-slate-200 font-mono">п. 5.1, 5.2</strong> — контроль гребенкой WFT 0,9 мм = DFT 0,5 мм; замеры каждые 15–20 м (не менее 10 точек).
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>

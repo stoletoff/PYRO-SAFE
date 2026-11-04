@@ -253,9 +253,9 @@ export function calculateFlammotectCableLine(input: FlammotectCableInput): Flamm
 // ==========================================
 
 export const FLAMMOTECT_PENETRATION_CONSTANTS = {
-  /** Норма расхода покрытия FLAMMOTECT-A coating на 1 м² проходки (кг) без потерь (Таблица 10 регламента) */
+  /** Норма расхода покрытия FLAMMOTECT-A coating на 1 м² проходки (кг) без потерь (п. 3.1 Регламента Double Layer) */
   COATING_KG_M2: 6.48,
-  /** Норма расхода шпаклевки FLAMMOTECT-A filler на 1 м² проходки (кг) без потерь (Таблица 10 регламента) */
+  /** Норма расхода шпаклевки FLAMMOTECT-A filler на 1 м² проходки (кг) без потерь (п. 3.1 Регламента Double Layer) */
   FILLER_KG_M2: 5.00,
   /** Площадь минплиты на 1 м² проходки (2 слоя плиты по 60 мм = 2.0 м²) */
   MINERAL_BOARD_M2_PER_M2: 2.0,
@@ -353,7 +353,7 @@ export interface FlammotectPenetrationResult {
 
 /**
  * Расчет расхода материалов на кабельную проходку / закладную гильзу
- * методом пропорции по Таблице 10 Регламента «PYRO-SAFE Flammotect – Double layer» (EI 120)
+ * по удельным нормам п. 3.1 Регламента «PYRO-SAFE Flammotect – Double layer» (EI 120)
  * S_проема (м²) × Удельный норматив на 1 м² × Коэффициент технологических потерь
  */
 export function calculateFlammotectPenetration(
@@ -488,7 +488,7 @@ export function calculateFlammotectPenetration(
     };
   }
 
-  // Расчет всех материалов на 1 проходку методом пропорции по Таблице 10 Регламента:
+  // Расчет всех материалов на 1 проходку по нормам п. 3.1 Регламента Double Layer:
   // S_проема (м²) × удельная норма на 1 м² × коэффициент потерь
 
   // 1. Минплита 150 кг/м³ (толщина 60 мм, 2 слоя = 2.0 м² на 1 м²):
