@@ -127,7 +127,7 @@ function notify() {
 export const projectStore = {
   add(item: ProjectItem) {
     initStoreIfNeeded();
-    memoryItems = [item, ...memoryItems];
+    memoryItems = [...memoryItems, item];
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryItems));
     } catch {

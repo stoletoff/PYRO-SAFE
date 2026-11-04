@@ -231,6 +231,7 @@ export interface FlammotectPenetrationInput {
 
 export interface FlammotectPenetrationResult {
   openingAreaM2: number;
+  openingAreaCm2: number;
   openingAreaMm2: number;
   penetrantsAreaMm2: number;
   fillRatioPercent: number;
@@ -352,8 +353,13 @@ export function calculateFlammotectPenetration(
   const cavityVolumeLiters = roundTo(cavityVolumeM3 * 1000, 2);
 
   if (isBlocked) {
+    const displayOpeningAreaM2 =
+      openingAreaM2 < 0.01 ? roundTo(openingAreaM2, 6) : roundTo(openingAreaM2, 4);
+    const openingAreaCm2 = roundTo(openingAreaMm2 / 100, 2);
+
     return {
-      openingAreaM2: roundTo(openingAreaM2, 4),
+      openingAreaM2: displayOpeningAreaM2,
+      openingAreaCm2,
       openingAreaMm2: roundTo(openingAreaMm2, 1),
       penetrantsAreaMm2: roundTo(penetrantsAreaMm2, 1),
       fillRatioPercent: roundTo(fillRatioPercent, 2),
@@ -406,8 +412,15 @@ export function calculateFlammotectPenetration(
   // Контрольные замеры толщины (п. 5.1): не менее 2 замеров
   const measurementsCount = Math.max(2, Math.ceil(openingAreaM2 * 2));
 
+  // Для малых проемов/гильз (< 0.01 м², например Ду 15 - Ду 100) выводим м² с точностью 6 знаков (например, 0.001257 м²),
+  // для средних и больших проемов — 4 знака. Площадь в см² выводим с точностью 2 знака (например, 12.57 см²).
+  const displayOpeningAreaM2 =
+    openingAreaM2 < 0.01 ? roundTo(openingAreaM2, 6) : roundTo(openingAreaM2, 4);
+  const openingAreaCm2 = roundTo(openingAreaMm2 / 100, 2);
+
   return {
-    openingAreaM2: roundTo(openingAreaM2, 4),
+    openingAreaM2: displayOpeningAreaM2,
+    openingAreaCm2,
     openingAreaMm2: roundTo(openingAreaMm2, 1),
     penetrantsAreaMm2: roundTo(penetrantsAreaMm2, 1),
     fillRatioPercent: roundTo(fillRatioPercent, 2),
@@ -429,7 +442,7 @@ export function calculateFlammotectPenetration(
 }
 
 // ==========================================
-// МОДУЛЬ 3: ЗАКЛАДНЫЕ ГИЛЬЗЫ И ЗАДАНИЕ СТРОИТЕЛЯМ
+// МОДУЛЬ 3: СТАНДАРТНЫЕ ГИЛЬЗЫ (ДСТУ EN 10255) И РАСЧЕТ ДЛИНЫ
 // ==========================================
 
 export interface StandardRoundSleeve {

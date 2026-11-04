@@ -196,37 +196,37 @@ export function TechnicalReference() {
           </div>
         </div>
 
-        {/* Builder Task and Installation Guidelines */}
+        {/* Installation Guidelines & Standards */}
         <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
           <div className="flex items-center space-x-2 text-rose-400 font-bold">
             <Wrench className="w-5 h-5" />
             <h4 className="text-base text-white">
-              Правила установки закладных гильз и разграничение разделов (АР / ЭОМ)
+              Нормативные требования к гильзам и выполнению огнезащитной заделки (ОЗС)
             </h4>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300 leading-relaxed">
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
               <span className="font-bold text-amber-400 block uppercase tracking-wider text-[11px]">
-                1. Часть строителей (Раздел АР / КЖ):
+                1. Требования к стальным гильзам и проемам:
               </span>
               <ul className="list-disc list-inside space-y-1 text-slate-400">
-                <li>Установка стальной электросварной трубы ГОСТ 10704 / ДСТУ 8936 до бетонирования.</li>
-                <li>Наружная антикоррозийная грунтовка ГФ-021 за 2 раза.</li>
-                <li>Заделка зазора между трубой и стеной цементным раствором М100.</li>
-                <li>Соблюдение проектных выступов (ПУЭ 2.1.58: +50 мм выше чистого пола в перекрытиях; по +20 мм в стенах).</li>
+                <li>Применение стальных труб по действующим европейским стандартам Украины (<strong>ДСТУ EN 10255</strong> или <strong>ДСТУ EN 10217-1</strong> взамен недействующего ГОСТ 10704).</li>
+                <li>Антикоррозийная защита наружной и внутренней поверхности гильзы грунтом за 2 раза.</li>
+                <li>Торцы труб должны быть зачищены от заусенцев и острых кромок во избежание повреждения кабелей.</li>
+                <li>Соблюдение проектных выступов: ПУЭ 2.1.58 (+50 мм выше чистого пола в перекрытиях для защиты от воды; по +20 мм в стенах под отделку).</li>
               </ul>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
               <span className="font-bold text-rose-400 block uppercase tracking-wider text-[11px]">
-                2. Часть электромонтажников (Раздел ЭОМ):
+                2. Огнезащитная заделка (FLAMMOTECT Double Layer EI 120):
               </span>
               <ul className="list-disc list-inside space-y-1 text-slate-400">
-                <li>Прокладка кабелей (заполнение просвета трубы не более 60%).</li>
-                <li>Огнезащитная заделка материалами системы FLAMMOTECT Double Layer.</li>
-                <li>Закладка в спецификацию ЭОМ всех материалов ОЗС (краска coating, шпаклевка filler, минплита, вата).</li>
-                <li>Оформление Акта скрытых работ и маркировочной бирки ОЗС.</li>
+                <li>Коэффициент заполнения просвета гильзы кабелями строго не более <strong>60%</strong> по Регламенту и ПУЭ.</li>
+                <li>Установка 2-х слоев жестких минераловатных плит толщиной по 60 мм (суммарно 120 мм) заподлицо с поверхностями преграды.</li>
+                <li>Плотная набивка полостей и зазоров вокруг кабелей базальтовой ватой и герметизация швов шпаклевкой FLAMMOTECT-A filler.</li>
+                <li>Окраска наружных поверхностей плит и кабелей огнезащитным составом FLAMMOTECT-A coating (длина защитного слоя кабелей 500 мм).</li>
               </ul>
             </div>
           </div>
@@ -234,7 +234,7 @@ export function TechnicalReference() {
           <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start space-x-2 text-xs text-slate-400">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div>
-              <strong>Метод расчета по Регламенту:</strong> Потребность во всех материалах ОЗС рассчитывается пропорционально площади сечения проходки $S$ (в м²) по нормам Таблицы 10 Регламента.
+              <strong>Метод расчета по Регламенту:</strong> Потребность во всех материалах ОЗС рассчитывается пропорционально фактической площади просвета проходки $S$ (в м²) по удельным нормативам Таблицы 10 Регламента.
             </div>
           </div>
         </div>

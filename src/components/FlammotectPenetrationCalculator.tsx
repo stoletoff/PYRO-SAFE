@@ -31,9 +31,7 @@ import {
   Check,
   Search,
   Flame,
-  Gauge,
   HelpCircle,
-  FileText,
   Printer,
   Sparkles,
   Wrench,
@@ -128,7 +126,6 @@ export function FlammotectPenetrationCalculator({
   onAddToProject,
 }: FlammotectPenetrationCalculatorProps) {
   const [copied, setCopied] = useState(false);
-  const [copiedBuilderTask, setCopiedBuilderTask] = useState(false);
   const [addedToast, setAddedToast] = useState(false);
   const [positionTitle, setPositionTitle] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<
@@ -136,10 +133,9 @@ export function FlammotectPenetrationCalculator({
   >("popular");
   const [cableSearch, setCableSearch] = useState("");
 
-  // Параметры строительного задания на гильзу
+  // Параметры конструкции и маркировка проходки
   const [wallThicknessMm, setWallThicknessMm] = useState<number>(200);
   const [sleeveTag, setSleeveTag] = useState<string>("Г-1");
-  const [activeRightTab, setActiveRightTab] = useState<"materials" | "builder_task">("materials");
 
   const {
     control,
@@ -341,13 +337,13 @@ export function FlammotectPenetrationCalculator({
     const text = `
 === РАСЧЕТ КАБЕЛЬНОЙ ПРОХОДКИ PYRO-SAFE FLAMMOTECT (DOUBLE LAYER) ===
 Регламент: ТОВ «ІПВК «СПЕЦЗАХИСТ» / svt Products GmbH (2022)
-Позиция / Гильза: ${sleeveTag} (${currentSleeveSpec})
+Позиция / Марка: ${sleeveTag} (${currentSleeveSpec})
 Тип конструкции: ${formValues.isFloorPenetration ? "Перекрытие (≥150 мм)" : "Стена / перегородка (≥100 мм)"}, толщина ${wallThicknessMm} мм
 Форма и размеры: ${dimensionsText}
 Предел огнестойкости: EI 120 (Двухслойная проходка 2 × 60 мм = 120 мм)
 ---
-Площадь проема (S): ${result.openingAreaM2} м² (${result.openingAreaMm2} мм²)
-Площадь сечения коммуникаций: ${result.penetrantsAreaMm2} мм²
+Площадь проема (S): ${result.openingAreaM2} м² (${result.openingAreaCm2} см² / ${result.openingAreaMm2} мм²)
+Площадь сечения коммуникаций: ${(totalPenetrantsAreaMm2 / 100).toFixed(2)} см² (${result.penetrantsAreaMm2} мм²)
 Коэффициент заполнения: ${result.fillRatioPercent}% (лимит не более 60%)
 Состав коммуникаций: ${penetrantsSummary}
 ---
@@ -363,58 +359,6 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
-  };
-
-  const handleCopyBuilderTask = () => {
-    const penetrantsList = (formValues.penetrants || [])
-      .map((p) => `  • ${p.name || "Элемент"} (Ø${p.diameterMm} мм) — ${p.count} шт.`)
-      .join("\n");
-
-    const protrusionText = formValues.isFloorPenetration
-      ? `  • Сверху: +${sleeveLengthInfo.protrusionSide1Mm} мм выше отметки чистого пола (защита от затекания воды по ПУЭ 2.1.58)\n  • Снизу: +${sleeveLengthInfo.protrusionSide2Mm} мм ниже плиты потолка`
-      : `  • С обеих сторон: по +${sleeveLengthInfo.protrusionSide1Mm} мм от плоскости стены под чистовую отделку`;
-
-    const text = `
-=== ЗАДАНИЕ СТРОИТЕЛЯМ НА ЗАКЛАДНУЮ ГИЛЬЗУ ===
-Маркировка гильзы: ${sleeveTag}
-Назначение: Закладная гильза для прохода кабелей через огнестойкую преграду
-Огнезащитная заделка: PYRO-SAFE FLAMMOTECT (Double layer EI 120)
-Место установки: ${formValues.isFloorPenetration ? "Перекрытие (пол/потолок)" : "Стена / перегородка"}, толщина конструкции ${wallThicknessMm} мм
-
-1. СПЕЦИФИКАЦИЯ ЗАКЛАДНОЙ ДЕТАЛИ:
-- Тип изделия: ${formValues.shape === "round" ? "Стальная электросварная труба ГОСТ 10704-91 / ДСТУ 8936" : "Стальной короб из листовой стали б=2.0 мм ГОСТ 19903-2015"}
-- Типоразмер: ${currentSleeveSpec}
-- Общая длина гильзы: L = ${sleeveLengthInfo.totalLengthMm} мм
-- Проектные выпуски гильзы:
-${protrusionText}
-
-2. ТРЕБОВАНИЯ К СТРОИТЕЛЬНОМУ МОНТАЖУ:
-1) Закладную гильзу установить в проектное положение строго соосно кабельной трассе до бетонирования (или заделать в готовый проем безусадочным цементно-песчаным раствором М100 на всю глубину конструкции).
-2) Торцы и внутреннюю поверхность гильзы тщательно зачистить от заусенцев, острых кромок и сварочных брызг (для исключения повреждения оболочки кабелей при протяжке).
-3) Наружную и внутреннюю поверхность стальной гильзы покрыть антикоррозийным грунтом ГФ-021 (ГОСТ 25129-82) за 2 раза.
-4) Выдержать нормативные проектные выступы гильзы (${sleeveLengthInfo.ruleText}).
-5) Жестко раскрепить гильзу для исключения смещения при укладке и вибрировании бетона.
-
-3. ПРОКЛАДЫВАЕМЫЕ КАБЕЛИ И ПРОВЕРКА СЕЧЕНИЯ:
-- Суммарная площадь коммуникаций: ${(totalPenetrantsAreaMm2 / 100).toFixed(1)} см²
-- Площадь просвета гильзы: ${(result.openingAreaM2 * 10000).toFixed(1)} см²
-- Фактический коэффициент заполнения: ${result.fillRatioPercent}% (Норматив по ПУЭ / Регламенту: не более 60%)
-- Состав коммуникаций:
-${penetrantsList || "  • Кабели по кабельному журналу"}
-
-4. ПОСЛЕДУЮЩАЯ ОГНЕЗАЩИТНАЯ ЗАДЕЛКА (ОЗС):
-- Выполняется специализированной электромонтажной организацией после завершения прокладки кабелей.
-- Заделка гильзы/проема выполняется сертифицированной системой PYRO-SAFE FLAMMOTECT-A Double Layer (EI 120) по Таблице 10 Регламента:
-  • FLAMMOTECT-A coating (краска): ${result.coatingMassKg} кг
-  • FLAMMOTECT-A filler (шпаклевка): ${result.fillerMassKg} кг
-  • Минплита 150 кг/м³ (толщина 60 мм, 2 слоя): ${result.boardAreaM2} м²
-  • Рассыпная базальтовая вата: ${result.looseWoolMassKg} кг
-Дата: ${new Date().toLocaleDateString("ru-RU")}
-    `.trim();
-
-    navigator.clipboard.writeText(text);
-    setCopiedBuilderTask(true);
-    setTimeout(() => setCopiedBuilderTask(false), 2500);
   };
 
   const handlePrint = () => {
@@ -496,16 +440,16 @@ ${penetrantsList || "  • Кабели по кабельному журналу
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Form & Penetrants */}
         <div className="lg:col-span-7 space-y-6">
-          {/* 1. Opening Geometry & Builder Sleeve Task */}
+          {/* 1. Opening Geometry & Sleeve Parameters */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
               <div>
                 <h2 className="text-base font-bold text-white flex items-center">
                   <Wrench className="w-4 h-4 mr-2 text-rose-500" />
-                  <span>1. Закладная гильза строителям и геометрия проема</span>
+                  <span>1. Параметры проходки / гильзы</span>
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Подбор стальной трубы/короба под кабели, расчет длины с выпусками и заделка ОЗС
+                  Геометрия проема или гильзы, проверка коэффициента заполнения и расчет заделки ОЗС
                 </p>
               </div>
               <div className="flex items-center space-x-2">
@@ -516,7 +460,7 @@ ${penetrantsList || "  • Кабели по кабельному журналу
                   onChange={(e) => setSleeveTag(e.target.value)}
                   placeholder="Г-1"
                   className="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-rose-400 text-center uppercase focus:outline-none focus:border-rose-500"
-                  title="Маркировка гильзы в чертежах КЖ/АР/ЭОМ"
+                  title="Маркировка проходки / гильзы в чертежах"
                 />
               </div>
             </div>
@@ -524,7 +468,7 @@ ${penetrantsList || "  • Кабели по кабельному журналу
             {/* Location: Wall or Floor */}
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-2">
-                Тип строительной конструкции (преграды):
+                Тип строительной конструкции (ограждающей преграды):
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -619,7 +563,7 @@ ${penetrantsList || "  • Кабели по кабельному журналу
               <div className="mt-2 pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <span className="text-xs font-bold text-white">
-                    Длина гильзы строителям: <span className="font-mono text-rose-400 text-sm">L = {sleeveLengthInfo.totalLengthMm} мм</span>
+                    Расчетная длина гильзы: <span className="font-mono text-rose-400 text-sm">L = {sleeveLengthInfo.totalLengthMm} мм</span>
                   </span>
                   <p className="text-[11px] text-slate-400 mt-0.5">
                     {sleeveLengthInfo.ruleText}
@@ -674,7 +618,7 @@ ${penetrantsList || "  • Кабели по кабельному журналу
                     Сортамент стандартных закладных гильз (клик для выбора):
                   </span>
                   <span className="text-[10px] text-slate-500">
-                    ГОСТ 10704 / ДСТУ
+                    ДСТУ EN 10255
                   </span>
                 </div>
 
@@ -1122,50 +1066,24 @@ ${penetrantsList || "  • Кабели по кабельному журналу
         {/* Right Column: Output & Spec */}
         <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl backdrop-blur-md space-y-5">
-            {/* Tab switch: Materials vs Builder Task */}
-            <div className="flex items-center p-1 bg-slate-950 border border-slate-800 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setActiveRightTab("materials")}
-                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
-                  activeRightTab === "materials"
-                    ? "bg-rose-600 text-white shadow-md shadow-rose-950/40"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Gauge className="w-3.5 h-3.5" />
-                <span>Материалы ОЗС</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveRightTab("builder_task")}
-                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
-                  activeRightTab === "builder_task"
-                    ? "bg-rose-600 text-white shadow-md shadow-rose-950/40"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Задание строителям ({sleeveTag})</span>
-              </button>
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center">
+                  <Flame className="w-4 h-4 mr-2 text-rose-500" />
+                  Потребность в материалах ОЗС
+                </h3>
+                <span className="text-[11px] text-slate-400 font-mono">
+                  {currentSleeveSpec}
+                </span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800/40 text-[10px] font-mono text-rose-300 font-bold">
+                EI 120
+              </span>
             </div>
 
-            {/* TAB 1: Materials Output */}
-            {activeRightTab === "materials" && (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                  <div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center">
-                      <Flame className="w-4 h-4 mr-2 text-rose-500" />
-                      Заделка гильзы EI 120
-                    </h3>
-                    <span className="text-[11px] text-slate-400 font-mono">
-                      {currentSleeveSpec}
-                    </span>
-                  </div>
-                  <span className="text-xs font-mono text-rose-400 font-bold">FLAMMOTECT</span>
-                </div>
+            {/* Results Output */}
+            <div className="space-y-5">
 
                 {/* Fill Ratio Gauge */}
                 <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-2">
@@ -1201,8 +1119,19 @@ ${penetrantsList || "  • Кабели по кабельному журналу
                   </div>
 
                   <div className="flex justify-between text-[11px] text-slate-500">
-                    <span>Сечение комун. = {result.penetrantsAreaMm2} мм²</span>
+                    <span>Сечение комун. = {result.penetrantsAreaMm2} мм² ({(result.penetrantsAreaMm2 / 100).toFixed(1)} см²)</span>
                     <span>Лимит по регламенту: ≤ 60%</span>
+                  </div>
+
+                  {/* Opening Area Detailed Breakdown */}
+                  <div className="flex justify-between items-center text-xs text-slate-300 pt-2 border-t border-slate-800/70">
+                    <span className="text-slate-400 font-medium">Просвет проема (S):</span>
+                    <span className="font-mono font-bold text-white">
+                      {result.openingAreaM2} м²{" "}
+                      <span className="text-slate-400 font-normal">
+                        ({result.openingAreaCm2} см² / {result.openingAreaMm2} мм²)
+                      </span>
+                    </span>
                   </div>
 
                   {result.isBlocked && (
@@ -1371,141 +1300,6 @@ ${penetrantsList || "  • Кабели по кабельному журналу
                   </div>
                 )}
               </div>
-            )}
-
-            {/* TAB 2: Builder Task Sheet */}
-            {activeRightTab === "builder_task" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                  <div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center">
-                      <Wrench className="w-4 h-4 mr-2 text-rose-500" />
-                      Задание строителям
-                    </h3>
-                    <span className="text-[11px] text-slate-400">
-                      Марка в чертежах: <strong className="text-rose-400 font-mono">{sleeveTag}</strong>
-                    </span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800/40 text-[10px] font-mono text-rose-300">
-                    КЖ / АР / ЭОМ
-                  </span>
-                </div>
-
-                {/* Printable / Structured Task Card */}
-                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3.5 text-xs text-slate-300">
-                  {/* Specification Table */}
-                  <div className="space-y-2 border-b border-slate-800 pb-3">
-                    <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
-                      1. Параметры закладной детали:
-                    </span>
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div>
-                        <span className="text-slate-500 block">Тип изделия:</span>
-                        <span className="font-semibold text-white">
-                          {formValues.shape === "round" ? "Стальная труба ГОСТ 10704" : "Стальной короб ГОСТ 19903"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block">Типоразмер:</span>
-                        <span className="font-semibold text-rose-300 font-mono">
-                          {currentSleeveSpec}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block">Конструкция:</span>
-                        <span className="text-white">
-                          {formValues.isFloorPenetration ? "Перекрытие" : "Стена"}, {wallThicknessMm} мм
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block">Длина гильзы:</span>
-                        <span className="font-bold text-emerald-400 font-mono">
-                          L = {sleeveLengthInfo.totalLengthMm} мм
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-1 p-2 bg-slate-900 rounded-lg text-[11px]">
-                      <span className="text-slate-400 block mb-0.5 font-medium">Проектные выступы:</span>
-                      <span className="text-white">
-                        {formValues.isFloorPenetration
-                          ? `• Выпуск сверху: +${sleeveLengthInfo.protrusionSide1Mm} мм выше чистого пола (ПУЭ 2.1.58)\n• Выпуск снизу: +${sleeveLengthInfo.protrusionSide2Mm} мм ниже потолка`
-                          : `• Выпуск с каждой стороны: по +${sleeveLengthInfo.protrusionSide1Mm} мм под штукатурку и чистовую отделку`}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Builder Instructions */}
-                  <div className="space-y-1.5 border-b border-slate-800 pb-3">
-                    <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
-                      2. Указания строителям по установке:
-                    </span>
-                    <ul className="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
-                      <li>Установить гильзу в опалубку строго по оси кабельной трассы до бетонирования (или заделать в готовый проем безусадочным раствором М100 на всю глубину).</li>
-                      <li>Торцы и внутреннюю поверхность зачистить от заусенцев, острых кромок и сварочных брызг.</li>
-                      <li>Покрыть гильзу антикоррозийным грунтом ГФ-021 за 2 раза.</li>
-                      <li>Выдержать нормативные проектные выступы.</li>
-                      <li>Жестко зафиксировать от смещения при укладке бетона.</li>
-                    </ul>
-                  </div>
-
-                  {/* Cables Verification */}
-                  <div className="space-y-1.5 border-b border-slate-800 pb-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-mono text-slate-400 tracking-wider">
-                        3. Прокладываемые кабели и сечение:
-                      </span>
-                      <span className={`font-mono text-[11px] font-bold ${result.fillRatioPercent > 60 ? "text-red-400" : "text-emerald-400"}`}>
-                        Заполнение: {result.fillRatioPercent}% (норма ≤ 60%)
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Суммарная площадь кабелей: <strong>{(totalPenetrantsAreaMm2 / 100).toFixed(1)} см²</strong> из <strong>{(result.openingAreaM2 * 10000).toFixed(1)} см²</strong> просвета гильзы.
-                    </p>
-                  </div>
-
-                  {/* Subsequent Firestop */}
-                  <div className="space-y-1 text-[11px]">
-                    <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
-                      4. Заделка ОЗС (электромонтажниками):
-                    </span>
-                    <p className="text-slate-400 leading-normal">
-                      После протяжки кабелей полость гильзы/проема подлежит огнезащитной заделке сертифицированной системой <strong className="text-white">PYRO-SAFE FLAMMOTECT-A Double Layer (EI 120)</strong> по нормам Таблицы 10 Регламента: минплита 150 кг/м³ (2×60 мм) — <span className="text-white font-mono">{result.boardAreaM2} м²</span>, базальтовая вата — <span className="text-white font-mono">{result.looseWoolMassKg} кг</span>, краска coating — <span className="text-white font-mono">{result.coatingMassKg} кг</span>, шпаклевка filler — <span className="text-white font-mono">{result.fillerMassKg} кг</span>.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Builder Task Actions */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCopyBuilderTask}
-                    className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
-                  >
-                    {copiedBuilderTask ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                        Скопировано!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                        Копировать задание
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handlePrint}
-                    className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
-                  >
-                    <Printer className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                    Печать задания
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* General Actions */}
             <div className="pt-2 border-t border-slate-800 space-y-3">
@@ -1518,12 +1312,13 @@ ${penetrantsList || "  • Кабели по кабельному журналу
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-rose-500 placeholder-slate-600 transition-colors disabled:opacity-50"
               />
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={handleCopy}
                   disabled={result.isBlocked}
                   className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50"
+                  title="Копировать текстовый расчет ОЗС"
                 >
                   {copied ? (
                     <>
@@ -1533,9 +1328,20 @@ ${penetrantsList || "  • Кабели по кабельному журналу
                   ) : (
                     <>
                       <Copy className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                      Копировать расчет ОЗС
+                      Копировать
                     </>
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  disabled={result.isBlocked}
+                  className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50"
+                  title="Печать спецификации ОЗС"
+                >
+                  <Printer className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                  Печать
                 </button>
 
                 <button
@@ -1545,7 +1351,7 @@ ${penetrantsList || "  • Кабели по кабельному журналу
                   className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-500 transition-all shadow-lg shadow-rose-950/40 disabled:opacity-50"
                 >
                   <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
-                  В спецификацию проекта
+                  В проект
                 </button>
               </div>
 
