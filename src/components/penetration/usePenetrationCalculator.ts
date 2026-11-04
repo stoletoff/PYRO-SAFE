@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   flammotectPenetrationFormSchema,
@@ -75,18 +75,25 @@ export function usePenetrationCalculator({
 
   const formValues = watch();
 
+  const watchedPenetrants = useWatch({
+    control,
+    name: "penetrants",
+  });
+
+  const penetrantsList = watchedPenetrants ?? formValues.penetrants ?? [];
+
   const result: FlammotectPenetrationResult = useMemo(() => {
     return calculateFlammotectPenetration({
       shape: formValues.shape,
       heightMm: Number(formValues.heightMm) || 0,
       widthMm: Number(formValues.widthMm) || 0,
       diameterMm: Number(formValues.diameterMm) || 0,
-      penetrants: (formValues.penetrants || []).map((p) => ({
-        id: p.id,
-        name: p.name,
-        type: p.type,
-        diameterMm: Number(p.diameterMm) || 0,
-        count: Number(p.count) || 0,
+      penetrants: penetrantsList.map((p) => ({
+        id: p?.id || "",
+        name: p?.name || "",
+        type: p?.type || "cable",
+        diameterMm: Number(p?.diameterMm) || 0,
+        count: Number(p?.count) || 0,
       })),
       applicationMethod:
         (formValues.applicationMethod as FlammotectApplicationMethod) ||
@@ -101,7 +108,7 @@ export function usePenetrationCalculator({
     formValues.heightMm,
     formValues.widthMm,
     formValues.diameterMm,
-    formValues.penetrants,
+    penetrantsList,
     formValues.applicationMethod,
     formValues.includeCuttingLosses,
     formValues.isFloorPenetration,
@@ -120,12 +127,12 @@ export function usePenetrationCalculator({
 
   // Суммарная площадь коммуникаций в проеме
   const totalPenetrantsAreaMm2 = useMemo(() => {
-    return (formValues.penetrants || []).reduce((acc, p) => {
-      const d = Number(p.diameterMm) || 0;
-      const cnt = Number(p.count) || 0;
+    return penetrantsList.reduce((acc, p) => {
+      const d = Number(p?.diameterMm) || 0;
+      const cnt = Number(p?.count) || 0;
       return acc + (Math.PI * (d / 2) * (d / 2)) * cnt;
     }, 0);
-  }, [formValues.penetrants]);
+  }, [penetrantsList]);
 
   // Интеллектуальный расчет и подбор гильзы
   const sleeveRec = useMemo(() => {
@@ -353,6 +360,7 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
     form,
     control,
     formValues,
+    penetrantsList,
     setValue,
     fields,
     append,

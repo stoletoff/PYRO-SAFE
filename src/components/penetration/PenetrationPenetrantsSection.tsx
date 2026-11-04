@@ -12,7 +12,9 @@ interface PenetrationPenetrantsSectionProps {
 export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSectionProps) {
   const {
     control,
+    setValue,
     formValues,
+    penetrantsList,
     fields,
     remove,
     selectedFilter,
@@ -73,7 +75,8 @@ export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSect
       ) : (
         <div className="space-y-2">
           {fields.map((fieldItem, index) => {
-            const currentType = formValues.penetrants?.[index]?.type || "cable";
+            const currentType =
+              penetrantsList[index]?.type || formValues.penetrants?.[index]?.type || "cable";
             return (
               <div
                 key={fieldItem.id}
@@ -125,36 +128,73 @@ export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSect
                       render={({ field }) => (
                         <input
                           type="number"
+                          step="any"
                           min="1"
                           max="1000"
-                          value={field.value ?? ""}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          value={field.value === 0 || field.value === undefined ? "" : field.value}
+                          onChange={(e) => {
+                            const val = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                            field.onChange(isNaN(val) ? 0 : val);
+                          }}
                           className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white text-right font-mono focus:outline-none focus:border-rose-500"
                         />
                       )}
                     />
-                    <span className="text-[11px] text-slate-500">мм</span>
+                    <span className="text-[11px] text-slate-500 font-mono">мм</span>
                   </div>
                 </div>
 
-                {/* Count */}
-                <div className="w-24 shrink-0">
+                {/* Count with +/- controls */}
+                <div className="w-32 shrink-0">
                   <div className="flex items-center space-x-1">
-                    <Controller
-                      control={control}
-                      name={`penetrants.${index}.count`}
-                      render={({ field }) => (
-                        <input
-                          type="number"
-                          min="1"
-                          max="5000"
-                          value={field.value ?? ""}
-                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white text-right font-mono focus:outline-none focus:border-rose-500"
-                        />
-                      )}
-                    />
-                    <span className="text-[11px] text-slate-500">шт.</span>
+                    <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = Number(penetrantsList[index]?.count) || 1;
+                          setValue(`penetrants.${index}.count`, Math.max(1, cur - 1), {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
+                        }}
+                        className="w-6 h-7 flex items-center justify-center text-slate-400 hover:text-white text-xs font-bold cursor-pointer transition-colors"
+                        title="Уменьшить количество"
+                      >
+                        -
+                      </button>
+                      <Controller
+                        control={control}
+                        name={`penetrants.${index}.count`}
+                        render={({ field }) => (
+                          <input
+                            type="number"
+                            min="1"
+                            max="5000"
+                            value={field.value === 0 || field.value === undefined ? "" : field.value}
+                            onChange={(e) => {
+                              const val = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
+                              field.onChange(isNaN(val) ? 0 : val);
+                            }}
+                            className="w-12 bg-transparent text-center text-xs text-white font-mono font-bold focus:outline-none"
+                          />
+                        )}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = Number(penetrantsList[index]?.count) || 1;
+                          setValue(`penetrants.${index}.count`, cur + 1, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
+                        }}
+                        className="w-6 h-7 flex items-center justify-center text-slate-400 hover:text-white text-xs font-bold cursor-pointer transition-colors"
+                        title="Увеличить количество"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-mono">шт.</span>
                   </div>
                 </div>
 
