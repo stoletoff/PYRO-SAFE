@@ -276,7 +276,7 @@ export function calculateFlammotectPenetration(
     widthMm = 0,
     diameterMm = 0,
     penetrants,
-    applicationMethod = "brush_10",
+    applicationMethod = "sprayer_30",
     includeCuttingLosses = true,
     isFloorPenetration = false,
     wallThicknessMm = 200,
@@ -338,7 +338,7 @@ export function calculateFlammotectPenetration(
   }
 
   // Коэффициенты технологических потерь
-  const coatingLossFactor = FLAMMOTECT_APPLICATION_LOSSES[applicationMethod]?.factor || 1.10;
+  const coatingLossFactor = FLAMMOTECT_APPLICATION_LOSSES[applicationMethod]?.factor || 1.30;
   const cuttingLossFactor = includeCuttingLosses
     ? FLAMMOTECT_PENETRATION_CONSTANTS.BOARD_CUTTING_LOSS_FACTOR
     : 1.0;
