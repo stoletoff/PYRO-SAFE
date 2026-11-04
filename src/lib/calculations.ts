@@ -708,3 +708,139 @@ export function roundTo(num: number, decimals: number): number {
   const factor = Math.pow(10, decimals);
   return Math.round((num + Number.EPSILON) * factor) / factor;
 }
+
+// ==========================================
+// МОДУЛЬ 5: ЗАКЛАДНЫЕ ГИЛЬЗЫ И ЗАДАНИЕ СТРОИТЕЛЯМ
+// ==========================================
+
+export interface StandardRoundSleeve {
+  diameterMm: number; // Наружный диаметр (мм)
+  internalDiameterMm: number; // Внутренний диаметр (мм)
+  wallThicknessMm: number;
+  label: string;
+  du: number; // Условный проход Ду
+  areaMm2: number;
+}
+
+export const STANDARD_ROUND_SLEEVES: StandardRoundSleeve[] = [
+  { diameterMm: 48, internalDiameterMm: 42, wallThicknessMm: 3.0, label: "Труба Ø48×3.0 (Ду 40)", du: 40, areaMm2: Math.PI * 21 * 21 },
+  { diameterMm: 57, internalDiameterMm: 50, wallThicknessMm: 3.5, label: "Труба Ø57×3.5 (Ду 50)", du: 50, areaMm2: Math.PI * 25 * 25 },
+  { diameterMm: 76, internalDiameterMm: 69, wallThicknessMm: 3.5, label: "Труба Ø76×3.5 (Ду 65)", du: 65, areaMm2: Math.PI * 34.5 * 34.5 },
+  { diameterMm: 89, internalDiameterMm: 81, wallThicknessMm: 4.0, label: "Труба Ø89×4.0 (Ду 80)", du: 80, areaMm2: Math.PI * 40.5 * 40.5 },
+  { diameterMm: 108, internalDiameterMm: 100, wallThicknessMm: 4.0, label: "Труба Ø108×4.0 (Ду 100)", du: 100, areaMm2: Math.PI * 50 * 50 },
+  { diameterMm: 133, internalDiameterMm: 124, wallThicknessMm: 4.5, label: "Труба Ø133×4.5 (Ду 125)", du: 125, areaMm2: Math.PI * 62 * 62 },
+  { diameterMm: 159, internalDiameterMm: 150, wallThicknessMm: 4.5, label: "Труба Ø159×4.5 (Ду 150)", du: 150, areaMm2: Math.PI * 75 * 75 },
+  { diameterMm: 219, internalDiameterMm: 207, wallThicknessMm: 6.0, label: "Труба Ø219×6.0 (Ду 200)", du: 200, areaMm2: Math.PI * 103.5 * 103.5 },
+  { diameterMm: 273, internalDiameterMm: 259, wallThicknessMm: 7.0, label: "Труба Ø273×7.0 (Ду 250)", du: 250, areaMm2: Math.PI * 129.5 * 129.5 },
+  { diameterMm: 325, internalDiameterMm: 309, wallThicknessMm: 8.0, label: "Труба Ø325×8.0 (Ду 300)", du: 300, areaMm2: Math.PI * 154.5 * 154.5 },
+  { diameterMm: 426, internalDiameterMm: 410, wallThicknessMm: 8.0, label: "Труба Ø426×8.0 (Ду 400)", du: 400, areaMm2: Math.PI * 205 * 205 },
+];
+
+export interface StandardRectSleeve {
+  widthMm: number;
+  heightMm: number;
+  label: string;
+  areaMm2: number;
+}
+
+export const STANDARD_RECT_SLEEVES: StandardRectSleeve[] = [
+  { widthMm: 100, heightMm: 100, label: "Короб 100 × 100 мм", areaMm2: 10000 },
+  { widthMm: 150, heightMm: 150, label: "Короб 150 × 150 мм", areaMm2: 22500 },
+  { widthMm: 200, heightMm: 100, label: "Короб 200 × 100 мм", areaMm2: 20000 },
+  { widthMm: 200, heightMm: 150, label: "Короб 200 × 150 мм", areaMm2: 30000 },
+  { widthMm: 200, heightMm: 200, label: "Короб 200 × 200 мм", areaMm2: 40000 },
+  { widthMm: 300, heightMm: 150, label: "Короб 300 × 150 мм", areaMm2: 45000 },
+  { widthMm: 300, heightMm: 200, label: "Короб 300 × 200 мм", areaMm2: 60000 },
+  { widthMm: 300, heightMm: 300, label: "Короб 300 × 300 мм", areaMm2: 90000 },
+  { widthMm: 400, heightMm: 200, label: "Короб 400 × 200 мм", areaMm2: 80000 },
+  { widthMm: 400, heightMm: 300, label: "Короб 400 × 300 мм", areaMm2: 120000 },
+  { widthMm: 500, heightMm: 200, label: "Короб 500 × 200 мм", areaMm2: 100000 },
+  { widthMm: 500, heightMm: 300, label: "Короб 500 × 300 мм", areaMm2: 150000 },
+  { widthMm: 600, heightMm: 200, label: "Короб 600 × 200 мм", areaMm2: 120000 },
+  { widthMm: 600, heightMm: 300, label: "Короб 600 × 300 мм", areaMm2: 180000 },
+  { widthMm: 600, heightMm: 400, label: "Короб 600 × 400 мм", areaMm2: 240000 },
+];
+
+/**
+ * Расчет длины гильзы и параметров выпуска с учетом нормативов
+ */
+export function calculateSleeveLength(wallThicknessMm: number, isFloor: boolean = false) {
+  const wall = Math.max(50, wallThicknessMm);
+  if (isFloor) {
+    // В перекрытиях: гильза должна выступать на 50 мм выше чистого пола (ПУЭ / СНиП) и 10-15 мм снизу
+    return {
+      totalLengthMm: wall + 50 + 15,
+      protrusionSide1Mm: 50, // Сверху над чистым полом
+      protrusionSide2Mm: 15, // Снизу из потолка
+      ruleText: "Выступ гильзы на 50 мм выше чистого пола (защита от воды по ПУЭ 2.1.58) и 15 мм снизу потолка",
+    };
+  } else {
+    // В стенах: гильза выступает на 15-20 мм с каждой стороны под финишную отделку
+    return {
+      totalLengthMm: wall + 20 + 20,
+      protrusionSide1Mm: 20, // Сторона 1
+      protrusionSide2Mm: 20, // Сторона 2
+      ruleText: "Выступ гильзы на 20 мм с каждой стороны стены под штукатурку и чистовую отделку",
+    };
+  }
+}
+
+/**
+ * Автоматический подбор минимально необходимого размера стандартной гильзы
+ * по суммарной площади сечения кабелей (из условия заполнения не более 60%)
+ */
+export function recommendSleeve(cablesAreaMm2: number, shape: "rect" | "round" = "round") {
+  const minAreaNeededMm2 = cablesAreaMm2 > 0 ? cablesAreaMm2 / 0.60 : 1000;
+
+  if (shape === "round") {
+    // Минимальный внутренний диаметр для круглой гильзы
+    const minDiameterMm = Math.ceil(Math.sqrt((4 * minAreaNeededMm2) / Math.PI));
+    // Ищем стандартную трубу из сортамента
+    const standardMatch = STANDARD_ROUND_SLEEVES.find((s) => s.internalDiameterMm >= minDiameterMm);
+    const chosen = standardMatch || {
+      diameterMm: minDiameterMm,
+      internalDiameterMm: minDiameterMm,
+      wallThicknessMm: 4.0,
+      label: `Труба Ø${minDiameterMm} мм (нестандартная)`,
+      du: minDiameterMm,
+      areaMm2: (Math.PI * minDiameterMm * minDiameterMm) / 4,
+    };
+
+    const actualFillPercent = chosen.areaMm2 > 0 ? (cablesAreaMm2 / chosen.areaMm2) * 100 : 0;
+
+    return {
+      shape: "round" as const,
+      minAreaNeededMm2: roundTo(minAreaNeededMm2, 1),
+      minDiameterMm,
+      recommendedDiameterMm: chosen.diameterMm,
+      recommendedInternalDiameterMm: chosen.internalDiameterMm,
+      recommendedLabel: chosen.label,
+      recommendedAreaMm2: roundTo(chosen.areaMm2, 1),
+      actualFillPercent: roundTo(actualFillPercent, 1),
+      isStandard: !!standardMatch,
+    };
+  } else {
+    // Ищем стандартный короб
+    const standardMatch = STANDARD_RECT_SLEEVES.find((s) => s.areaMm2 >= minAreaNeededMm2);
+    const side = Math.ceil(Math.sqrt(minAreaNeededMm2));
+    const chosen = standardMatch || {
+      widthMm: side,
+      heightMm: side,
+      label: `Короб ${side} × ${side} мм`,
+      areaMm2: side * side,
+    };
+
+    const actualFillPercent = chosen.areaMm2 > 0 ? (cablesAreaMm2 / chosen.areaMm2) * 100 : 0;
+
+    return {
+      shape: "rect" as const,
+      minAreaNeededMm2: roundTo(minAreaNeededMm2, 1),
+      recommendedWidthMm: chosen.widthMm,
+      recommendedHeightMm: chosen.heightMm,
+      recommendedLabel: chosen.label,
+      recommendedAreaMm2: roundTo(chosen.areaMm2, 1),
+      actualFillPercent: roundTo(actualFillPercent, 1),
+      isStandard: !!standardMatch,
+    };
+  }
+}

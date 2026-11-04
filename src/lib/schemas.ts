@@ -56,6 +56,8 @@ export const penetrationFormSchema = z
     fireResistance: z.enum(["EI60", "EI180"]),
     applicationMethod: z.enum(["brush", "sprayer"]),
     humidityGt85: z.boolean(),
+    wallThicknessMm: z.number().positive().max(2000).optional(),
+    sleeveTag: z.string().optional(),
     cables: z.array(cableItemSchema),
   })
   .refine(
@@ -145,6 +147,8 @@ export const flammotectPenetrationFormSchema = z
     applicationMethod: z.enum(["brush_5", "brush_10", "sprayer_30"]),
     includeCuttingLosses: z.boolean(),
     isFloorPenetration: z.boolean(),
+    wallThicknessMm: z.number().positive().max(2000).optional(),
+    sleeveTag: z.string().optional(),
     penetrants: z.array(flammotectPenetrantItemSchema),
   })
   .refine(

@@ -115,11 +115,13 @@ export function ProjectSummary({
       if (item.type === "cable_line") {
         csv += `${idx + 1},"${item.title.replace(/"/g, '""')}","Кабели KS 1","L=${item.details.lengthM}м",${item.result.areaM2},${item.result.ks1MassKg},0,0,0,${item.result.sp2MassKg},0,0,0\n`;
       } else if (item.type === "penetration") {
-        csv += `${idx + 1},"${item.title.replace(/"/g, '""')}","UNIVERSALSCHOTT","${item.details.dimensionsText}",${item.result.openingAreaM2},${item.result.ks1MassKg},0,0,${item.result.ks3MassKg},${item.result.sp2MassKg},${item.result.boardAreaM2},${item.result.mineralWoolMassKg},0\n`;
+        const spec = item.details.sleeveTag ? `[${item.details.sleeveTag}] ${item.details.sleeveSpec || item.details.dimensionsText}` : item.details.dimensionsText;
+        csv += `${idx + 1},"${item.title.replace(/"/g, '""')}","UNIVERSALSCHOTT","${spec.replace(/"/g, '""')}",${item.result.openingAreaM2},${item.result.ks1MassKg},0,0,${item.result.ks3MassKg},${item.result.sp2MassKg},${item.result.boardAreaM2},${item.result.mineralWoolMassKg},0\n`;
       } else if (item.type === "cable_flammotect") {
         csv += `${idx + 1},"${item.title.replace(/"/g, '""')}","Кабели FLAMMOTECT-A","L=${item.details.lengthM}м, DFT=${item.details.dryFilmThicknessMm}мм",${item.result.areaM2},0,${item.result.flammotectMassKg},0,0,0,0,0,0\n`;
       } else if (item.type === "penetration_flammotect") {
-        csv += `${idx + 1},"${item.title.replace(/"/g, '""')}","FLAMMOTECT Double Layer","${item.details.dimensionsText}, EI 120",${item.result.openingAreaM2},0,${item.result.coatingMassKg},${item.result.fillerMassKg},0,0,${item.result.boardAreaM2},${item.result.looseWoolMassKg},${item.result.dgCrBsMeters}\n`;
+        const spec = item.details.sleeveTag ? `[${item.details.sleeveTag}] ${item.details.sleeveSpec || item.details.dimensionsText}` : item.details.dimensionsText;
+        csv += `${idx + 1},"${item.title.replace(/"/g, '""')}","FLAMMOTECT Double Layer","${spec.replace(/"/g, '""')}, EI 120",${item.result.openingAreaM2},0,${item.result.coatingMassKg},${item.result.fillerMassKg},0,0,${item.result.boardAreaM2},${item.result.looseWoolMassKg},${item.result.dgCrBsMeters}\n`;
       }
     });
 
@@ -450,7 +452,9 @@ export function ProjectSummary({
                     ks1Kg = `${item.result.ks1MassKg} (${item.result.ks1BucketsCount}в)`;
                     boardM2 = `${item.result.boardAreaM2} м²`;
                     woolKg = `${item.result.mineralWoolMassKg} кг`;
-                    paramsText = `${item.details.dimensionsText} (${item.details.fireResistance})`;
+                    paramsText = item.details.sleeveTag
+                      ? `${item.details.sleeveTag}: ${item.details.sleeveSpec || item.details.dimensionsText}`
+                      : `${item.details.dimensionsText} (${item.details.fireResistance})`;
                   } else if (item.type === "cable_flammotect") {
                     systemLabel = "FLAMMOTECT-A Кабели";
                     systemColor = "bg-teal-950/80 text-teal-300 border-teal-800/40";
@@ -465,7 +469,9 @@ export function ProjectSummary({
                     fillerKg = `${item.result.fillerMassKg} (${item.result.fillerBucketsCount}в)`;
                     boardM2 = `${item.result.boardAreaM2} м²`;
                     woolKg = `${item.result.looseWoolMassKg} кг`;
-                    paramsText = `${item.details.dimensionsText} (EI 120)`;
+                    paramsText = item.details.sleeveTag
+                      ? `${item.details.sleeveTag}: ${item.details.sleeveSpec || item.details.dimensionsText}`
+                      : `${item.details.dimensionsText} (EI 120)`;
                   }
 
                   return (

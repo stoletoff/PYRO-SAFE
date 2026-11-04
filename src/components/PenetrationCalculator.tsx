@@ -12,6 +12,12 @@ import {
   PenetrationResult,
   CONSTANTS,
   PENETRATION_EI_NORMS,
+  recommendSleeve,
+  calculateSleeveLength,
+  STANDARD_ROUND_SLEEVES,
+  STANDARD_RECT_SLEEVES,
+  StandardRoundSleeve,
+  StandardRectSleeve,
 } from "@/lib/calculations";
 import { ProjectPenetrationItem } from "@/lib/projectStore";
 import { generateId, getTimestamp } from "@/lib/utils";
@@ -27,6 +33,11 @@ import {
   Layers,
   Droplets,
   Search,
+  FileText,
+  Printer,
+  Sparkles,
+  Wrench,
+  Ruler,
 } from "lucide-react";
 import {
   CABLES_CATALOG,
@@ -42,12 +53,19 @@ interface PenetrationCalculatorProps {
 
 export function PenetrationCalculator({ onAddToProject }: PenetrationCalculatorProps) {
   const [copied, setCopied] = useState(false);
+  const [copiedBuilderTask, setCopiedBuilderTask] = useState(false);
   const [addedToast, setAddedToast] = useState(false);
   const [positionTitle, setPositionTitle] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<
     "popular" | "Интеркабель" | "Южкабель" | "all"
   >("popular");
   const [cableSearch, setCableSearch] = useState("");
+
+  // Параметры закладной гильзы строителям
+  const [wallThicknessMm, setWallThicknessMm] = useState<number>(200);
+  const [sleeveTag, setSleeveTag] = useState<string>("Г-1");
+  const [isFloorPenetration, setIsFloorPenetration] = useState<boolean>(false);
+  const [activeRightTab, setActiveRightTab] = useState<"materials" | "builder_task">("materials");
 
   const {
     control,
@@ -56,10 +74,10 @@ export function PenetrationCalculator({ onAddToProject }: PenetrationCalculatorP
   } = useForm<PenetrationFormData>({
     resolver: zodResolver(penetrationFormSchema),
     defaultValues: {
-      shape: "rect",
+      shape: "round",
       heightMm: 400,
       widthMm: 600,
-      diameterMm: 300,
+      diameterMm: 150,
       fireResistance: "EI60",
       applicationMethod: "brush",
       humidityGt85: false,
@@ -94,6 +112,82 @@ export function PenetrationCalculator({ onAddToProject }: PenetrationCalculatorP
     applicationMethod: formValues.applicationMethod,
     humidityGt85: Boolean(formValues.humidityGt85),
   });
+
+  // Суммарная площадь коммуникаций в проеме
+  const totalCablesAreaMm2 = useMemo(() => {
+    return (formValues.cables || []).reduce((acc, c) => {
+      const d = Number(c.diameterMm) || 0;
+      const cnt = Number(c.count) || 0;
+      return acc + (Math.PI * (d / 2) * (d / 2)) * cnt;
+    }, 0);
+  }, [formValues.cables]);
+
+  // Интеллектуальный расчет и подбор гильзы
+  const sleeveRec = useMemo(() => {
+    return recommendSleeve(totalCablesAreaMm2, formValues.shape);
+  }, [totalCablesAreaMm2, formValues.shape]);
+
+  // Расчет длины гильзы и выступов
+  const sleeveLengthInfo = useMemo(() => {
+    return calculateSleeveLength(wallThicknessMm, isFloorPenetration);
+  }, [wallThicknessMm, isFloorPenetration]);
+
+  // Текущая спецификация гильзы
+  const currentSleeveSpec = useMemo(() => {
+    if (formValues.shape === "round") {
+      const dia = Number(formValues.diameterMm) || 0;
+      const match = STANDARD_ROUND_SLEEVES.find(
+        (s) =>
+          Math.abs(s.internalDiameterMm - dia) <= 3 ||
+          Math.abs(s.diameterMm - dia) <= 3
+      );
+      if (match) {
+        return `${match.label}, L = ${sleeveLengthInfo.totalLengthMm} мм`;
+      }
+      return `Труба стальная Ø${dia} мм, L = ${sleeveLengthInfo.totalLengthMm} мм`;
+    } else {
+      const w = Number(formValues.widthMm) || 0;
+      const h = Number(formValues.heightMm) || 0;
+      const match = STANDARD_RECT_SLEEVES.find(
+        (s) => s.widthMm === w && s.heightMm === h
+      );
+      if (match) {
+        return `${match.label}, L = ${sleeveLengthInfo.totalLengthMm} мм`;
+      }
+      return `Короб стальной ${w} × ${h} мм, L = ${sleeveLengthInfo.totalLengthMm} мм`;
+    }
+  }, [
+    formValues.shape,
+    formValues.diameterMm,
+    formValues.widthMm,
+    formValues.heightMm,
+    sleeveLengthInfo.totalLengthMm,
+  ]);
+
+  const handleApplyRecommendedSleeve = () => {
+    if (sleeveRec.shape === "round") {
+      setValue("shape", "round");
+      setValue(
+        "diameterMm",
+        sleeveRec.recommendedInternalDiameterMm || sleeveRec.recommendedDiameterMm
+      );
+    } else {
+      setValue("shape", "rect");
+      setValue("widthMm", sleeveRec.recommendedWidthMm);
+      setValue("heightMm", sleeveRec.recommendedHeightMm);
+    }
+  };
+
+  const handleSelectRoundSleeve = (s: StandardRoundSleeve) => {
+    setValue("shape", "round");
+    setValue("diameterMm", s.internalDiameterMm);
+  };
+
+  const handleSelectRectSleeve = (s: StandardRectSleeve) => {
+    setValue("shape", "rect");
+    setValue("widthMm", s.widthMm);
+    setValue("heightMm", s.heightMm);
+  };
 
   const filteredCables = useMemo(() => {
     let list = CABLES_CATALOG;
@@ -141,6 +235,8 @@ export function PenetrationCalculator({ onAddToProject }: PenetrationCalculatorP
 
     const text = `
 === РАСЧЕТ КАБЕЛЬНОЙ ПРОХОДКИ PYRO-SAFE UNIVERSALSCHOTT ===
+Позиция / Гильза: ${sleeveTag} (${currentSleeveSpec})
+Конструкция: ${isFloorPenetration ? "Перекрытие" : "Стена"}, толщина ${wallThicknessMm} мм
 Проем: ${shapeText}
 Предел огнестойкости: ${PENETRATION_EI_NORMS[formValues.fireResistance].label}
 Способ нанесения KS 1: ${formValues.applicationMethod === "brush" ? "Кисть/валик (+10%)" : "Распылитель (+30%)"}
@@ -151,7 +247,7 @@ ${cablesText || "  (Кабели не указаны)"}
 Суммарное сечение кабелей: ${result.cablesAreaMm2} мм²
 Коэффициент заполнения проходки: ${result.fillRatioPercent}% (макс. допустимо: 60%)
 
-РАСХОД МАТЕРИАЛОВ:
+РАСХОД МАТЕРИАЛОВ ОЗС:
 1. Минераловатная жесткая плита: ${result.boardAreaM2} м² (${result.boardLayers} ${result.boardLayers === 1 ? "слой" : "слоя"})
 2. Рассыпная базальтовая минвата: ${result.mineralWoolMassKg} кг
 3. Огнезащитное покрытие FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер по ${CONSTANTS.KS1_BUCKET_WEIGHT_KG} кг)
@@ -165,6 +261,58 @@ ${cablesText || "  (Кабели не указаны)"}
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const handleCopyBuilderTask = () => {
+    const cablesList = (formValues.cables || [])
+      .map((c) => `  • ${c.name || "Кабель"} (Ø${c.diameterMm} мм) — ${c.count} шт.`)
+      .join("\n");
+
+    const protrusionText = isFloorPenetration
+      ? `  • Сверху: +${sleeveLengthInfo.protrusionSide1Mm} мм выше отметки чистого пола (защита от затекания воды по ПУЭ 2.1.58)\n  • Снизу: +${sleeveLengthInfo.protrusionSide2Mm} мм ниже плиты потолка`
+      : `  • С обеих сторон: по +${sleeveLengthInfo.protrusionSide1Mm} мм от плоскости стены под чистовую отделку`;
+
+    const text = `
+=== ЗАДАНИЕ СТРОИТЕЛЯМ НА ЗАКЛАДНУЮ ГИЛЬЗУ ===
+Маркировка гильзы: ${sleeveTag}
+Назначение: Закладная гильза для прохода кабелей через огнестойкую преграду
+Огнезащитная заделка: PYRO-SAFE UNIVERSALSCHOTT (${PENETRATION_EI_NORMS[formValues.fireResistance].label})
+Место установки: ${isFloorPenetration ? "Перекрытие (пол/потолок)" : "Стена / перегородка"}, толщина конструкции ${wallThicknessMm} мм
+
+1. СПЕЦИФИКАЦИЯ ЗАКЛАДНОЙ ДЕТАЛИ:
+- Тип изделия: ${formValues.shape === "round" ? "Стальная электросварная труба ГОСТ 10704-91 / ДСТУ 8936" : "Стальной короб из листовой стали б=2.0 мм ГОСТ 19903-2015"}
+- Типоразмер: ${currentSleeveSpec}
+- Общая длина гильзы: L = ${sleeveLengthInfo.totalLengthMm} мм
+- Проектные выпуски гильзы:
+${protrusionText}
+
+2. ТРЕБОВАНИЯ К СТРОИТЕЛЬНОМУ МОНТАЖУ:
+1) Закладную гильзу установить в проектное положение строго соосно кабельной трассе до бетонирования (или заделать в готовый проем безусадочным цементно-песчаным раствором М100 на всю глубину конструкции).
+2) Торцы и внутреннюю поверхность гильзы тщательно зачистить от заусенцев, острых кромок и сварочных брызг (для исключения повреждения оболочки кабелей при протяжке).
+3) Наружную и внутреннюю поверхность стальной гильзы покрыть антикоррозийным грунтом ГФ-021 (ГОСТ 25129-82) за 2 раза.
+4) Выдержать нормативные проектные выступы гильзы (${sleeveLengthInfo.ruleText}).
+5) Жестко раскрепить гильзу для исключения смещения при укладке и вибрировании бетона.
+
+3. ПРОКЛАДЫВАЕМЫЕ КАБЕЛИ И ПРОВЕРКА СЕЧЕНИЯ:
+- Суммарная площадь кабелей: ${(totalCablesAreaMm2 / 100).toFixed(1)} см²
+- Площадь просвета гильзы: ${(result.openingAreaM2 * 10000).toFixed(1)} см²
+- Фактический коэффициент заполнения: ${result.fillRatioPercent}% (Норматив по ПУЭ / Регламенту: не более 60%)
+- Состав кабелей:
+${cablesList || "  • Кабели по кабельному журналу"}
+
+4. ПОСЛЕДУЮЩАЯ ОГНЕЗАЩИТНАЯ ЗАДЕЛКА (ОЗС):
+- Выполняется специализированной электромонтажной организацией после завершения прокладки кабелей.
+- Заделка полости гильзы выполняется огнезащитной системой PYRO-SAFE UNIVERSALSCHOTT (${PENETRATION_EI_NORMS[formValues.fireResistance].label}) на основе минераловатных плит 150 кг/м³, покрытия FLAMMOPLAST KS 1 и мастики KS 3.
+Дата: ${new Date().toLocaleDateString("ru-RU")}
+    `.trim();
+
+    navigator.clipboard.writeText(text);
+    setCopiedBuilderTask(true);
+    setTimeout(() => setCopiedBuilderTask(false), 2500);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleAddPosition = () => {
     if (!onAddToProject || result.isBlocked) return;
 
@@ -175,7 +323,7 @@ ${cablesText || "  (Кабели не указаны)"}
 
     const title =
       positionTitle.trim() ||
-      `Проходка UNIVERSALSCHOTT ${shapeText} (${formValues.fireResistance})`;
+      `Гильза ${sleeveTag}: ${currentSleeveSpec} (${shapeText}, ${formValues.fireResistance}, зап. ${result.fillRatioPercent}%)`;
 
     const cablesSummary = (formValues.cables || [])
       .map((c) => `${c.count}×Ø${c.diameterMm}`)
@@ -194,6 +342,9 @@ ${cablesText || "  (Кабели не указаны)"}
         applicationMethodName:
           formValues.applicationMethod === "brush" ? "Кисть/валик" : "Распылитель",
         humidityGt85: formValues.humidityGt85,
+        sleeveTag: sleeveTag.trim() || undefined,
+        sleeveSpec: currentSleeveSpec,
+        wallThicknessMm,
       },
       result,
     };
@@ -234,151 +385,367 @@ ${cablesText || "  (Кабели не указаны)"}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* FORM PANEL (7 cols) */}
         <div className="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-7 shadow-xl space-y-6 sm:space-y-7">
-          {/* Penetration Geometry */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-slate-200">
-                Геометрия проема проходки
+          {/* 1. Penetration Geometry & Builder Sleeve Task */}
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center">
+                  <Wrench className="w-4 h-4 mr-2 text-orange-500" />
+                  <span>1. Закладная гильза строителям и проем</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Подбор стальной трубы/короба под кабели, расчет длины с выпусками и заделка ОЗС
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-slate-400 font-mono">Марка:</span>
+                <input
+                  type="text"
+                  value={sleeveTag}
+                  onChange={(e) => setSleeveTag(e.target.value)}
+                  placeholder="Г-1"
+                  className="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-orange-400 text-center uppercase focus:outline-none focus:border-orange-500"
+                  title="Маркировка гильзы в чертежах КЖ/АР/ЭОМ"
+                />
+              </div>
+            </div>
+
+            {/* Location: Wall or Floor */}
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-2">
+                Тип строительной конструкции (преграды):
               </label>
-              <span className="text-xs font-mono text-slate-400">
-                S = <strong className="text-orange-400">{result.openingAreaM2}</strong> м² ({result.openingAreaMm2.toLocaleString()} мм²)
-              </span>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsFloorPenetration(false)}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    !isFloorPenetration
+                      ? "bg-orange-500/10 border-orange-500/40 text-white shadow-md shadow-orange-950/20"
+                      : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                  }`}
+                >
+                  <strong className="block text-xs font-bold mb-0.5">Стена / перегородка</strong>
+                  <span className="text-[11px] text-slate-400">Толщина ≥ 100 мм (выпуски по +20 мм)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsFloorPenetration(true)}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    isFloorPenetration
+                      ? "bg-orange-500/10 border-orange-500/40 text-white shadow-md shadow-orange-950/20"
+                      : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                  }`}
+                >
+                  <strong className="block text-xs font-bold mb-0.5">Перекрытие (пол/потолок)</strong>
+                  <span className="text-[11px] text-slate-400">Толщина ≥ 150 мм (выпуск +50 мм по ПУЭ)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Wall / Floor Thickness Input & Presets */}
+            <div className="space-y-2 p-3.5 bg-slate-950/70 border border-slate-800/80 rounded-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="text-xs font-medium text-slate-300 flex items-center">
+                  <Ruler className="w-3.5 h-3.5 mr-1.5 text-orange-400" />
+                  Толщина {isFloorPenetration ? "перекрытия" : "стены"} (H_стр), мм:
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min="50"
+                    max="1500"
+                    value={wallThicknessMm || ""}
+                    onChange={(e) => setWallThicknessMm(Math.max(50, parseFloat(e.target.value) || 0))}
+                    className="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white text-right font-mono focus:outline-none focus:border-orange-500"
+                  />
+                  <span className="text-xs text-slate-400 font-mono">мм</span>
+                </div>
+              </div>
+
+              {/* Fast presets */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] text-slate-500 font-medium">Стандарты:</span>
+                {!isFloorPenetration ? (
+                  <>
+                    {[100, 150, 200, 250, 300, 380, 510].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setWallThicknessMm(t)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                          wallThicknessMm === t
+                            ? "bg-orange-500 text-white font-bold"
+                            : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
+                        }`}
+                      >
+                        {t} мм {t === 380 ? "(1.5 кирп)" : t === 510 ? "(2 кирп)" : ""}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {[150, 180, 200, 220, 250, 300].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setWallThicknessMm(t)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                          wallThicknessMm === t
+                            ? "bg-orange-500 text-white font-bold"
+                            : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
+                        }`}
+                      >
+                        {t} мм {t === 220 ? "(ПК/ПБ)" : ""}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+
+              {/* Sleeve length banner */}
+              <div className="mt-2 pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-xs font-bold text-white">
+                    Длина гильзы строителям: <span className="font-mono text-orange-400 text-sm">L = {sleeveLengthInfo.totalLengthMm} мм</span>
+                  </span>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    {sleeveLengthInfo.ruleText}
+                  </p>
+                </div>
+                <span className="text-[10px] uppercase font-mono px-2 py-1 rounded bg-orange-950/80 border border-orange-800/40 text-orange-300 shrink-0 self-start sm:self-center">
+                  {isFloorPenetration ? "+65 мм (50+15)" : "+40 мм (20+20)"}
+                </span>
+              </div>
+            </div>
+
+            {/* Smart Auto-sizing Box */}
+            <div className="p-4 bg-gradient-to-br from-orange-950/30 via-slate-950 to-slate-950 border border-orange-800/30 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    Подбор сечения гильзы по кабелям (ПУЭ ≤ 60%)
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">
+                  ∑S кабелей = {(totalCablesAreaMm2 / 100).toFixed(1)} см²
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                <div>
+                  <span className="text-[11px] text-slate-400 block">
+                    Рекомендуемый типоразмер закладной гильзы:
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-emerald-400 font-mono">
+                    {sleeveRec.recommendedLabel}
+                  </span>
+                  <span className="text-[11px] text-slate-400 block mt-0.5">
+                    Заполнение сечения: <strong>{sleeveRec.actualFillPercent}%</strong> (норма ≤ 60%). Мин. просвет: {(sleeveRec.minAreaNeededMm2 / 100).toFixed(1)} см²
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleApplyRecommendedSleeve}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-orange-600 hover:bg-orange-500 text-white transition-all shrink-0 shadow-md shadow-orange-950/40 flex items-center justify-center"
+                >
+                  <Check className="w-3.5 h-3.5 mr-1.5" />
+                  Применить в проем
+                </button>
+              </div>
+
+              {/* Standard Sleeves Quick Picker Grid */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-300 font-medium">
+                    Сортамент стандартных закладных гильз (клик для выбора):
+                  </span>
+                  <span className="text-[10px] text-slate-500">
+                    ГОСТ 10704 / ДСТУ
+                  </span>
+                </div>
+
+                {formValues.shape === "round" ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+                    {STANDARD_ROUND_SLEEVES.map((s) => {
+                      const fill = s.areaMm2 > 0 ? (totalCablesAreaMm2 / s.areaMm2) * 100 : 0;
+                      const isOver = fill > 60;
+                      const isCurrent = Math.abs(s.internalDiameterMm - (Number(formValues.diameterMm) || 0)) <= 2;
+                      return (
+                        <button
+                          key={s.du}
+                          type="button"
+                          onClick={() => handleSelectRoundSleeve(s)}
+                          className={`p-2 rounded-lg border text-left text-[11px] transition-all flex flex-col justify-between ${
+                            isCurrent
+                              ? "bg-orange-950/90 border-orange-500 text-white shadow-sm ring-1 ring-orange-500/50"
+                              : isOver
+                              ? "bg-slate-950/50 border-red-900/30 text-slate-500 hover:border-red-800/50"
+                              : "bg-slate-950/80 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white"
+                          }`}
+                        >
+                          <span className="font-mono font-bold truncate">Ду {s.du} (Ø{s.diameterMm})</span>
+                          <div className="flex items-center justify-between text-[10px] mt-1">
+                            <span className={isOver ? "text-red-400 font-bold" : fill > 50 ? "text-amber-400 font-medium" : "text-emerald-400"}>
+                              {fill.toFixed(0)}%
+                            </span>
+                            {isOver ? (
+                              <span className="text-red-400 text-[9px] font-mono">&gt; 60%</span>
+                            ) : (
+                              <span className="text-slate-500 text-[9px]">ок</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+                    {STANDARD_RECT_SLEEVES.map((s, idx) => {
+                      const fill = s.areaMm2 > 0 ? (totalCablesAreaMm2 / s.areaMm2) * 100 : 0;
+                      const isOver = fill > 60;
+                      const isCurrent = s.widthMm === Number(formValues.widthMm) && s.heightMm === Number(formValues.heightMm);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectRectSleeve(s)}
+                          className={`p-2 rounded-lg border text-left text-[11px] transition-all flex flex-col justify-between ${
+                            isCurrent
+                              ? "bg-orange-950/90 border-orange-500 text-white shadow-sm ring-1 ring-orange-500/50"
+                              : isOver
+                              ? "bg-slate-950/50 border-red-900/30 text-slate-500 hover:border-red-800/50"
+                              : "bg-slate-950/80 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white"
+                          }`}
+                        >
+                          <span className="font-mono font-bold truncate">{s.widthMm}×{s.heightMm}</span>
+                          <div className="flex items-center justify-between text-[10px] mt-1">
+                            <span className={isOver ? "text-red-400 font-bold" : fill > 50 ? "text-amber-400 font-medium" : "text-emerald-400"}>
+                              {fill.toFixed(0)}%
+                            </span>
+                            {isOver ? (
+                              <span className="text-red-400 text-[9px] font-mono">&gt; 60%</span>
+                            ) : (
+                              <span className="text-slate-500 text-[9px]">ок</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Shape selection tabs */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setValue("shape", "rect")}
-                className={`p-3.5 rounded-xl border text-left transition-all ${
-                  formValues.shape === "rect"
-                    ? "bg-orange-500/10 border-orange-500 text-white font-medium shadow-md shadow-orange-950/20"
-                    : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <div className="text-sm font-semibold mb-0.5">Прямоугольный проем</div>
-                <div className="text-xs text-slate-500 font-mono">Высота (H) × Ширина (W)</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setValue("shape", "round")}
-                className={`p-3.5 rounded-xl border text-left transition-all ${
-                  formValues.shape === "round"
-                    ? "bg-orange-500/10 border-orange-500 text-white font-medium shadow-md shadow-orange-950/20"
-                    : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <div className="text-sm font-semibold mb-0.5">Круглый проем</div>
-                <div className="text-xs text-slate-500 font-mono">Диаметр (Ø D)</div>
-              </button>
-            </div>
-
-            {/* Dimension Inputs */}
-            {formValues.shape === "rect" ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">
-                    Высота (H), мм
-                  </label>
-                  <Controller
-                    name="heightMm"
-                    control={control}
-                    render={({ field }) => (
-                      <input
-                        type="number"
-                        min="50"
-                        step="10"
-                        value={field.value || ""}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-xl px-4 py-2.5 text-white font-mono text-sm outline-none"
-                        placeholder="400"
-                      />
-                    )}
-                  />
-                  {/* Quick sizes */}
-                  <div className="flex gap-1 pt-1">
-                    {[200, 400, 600, 800].map((h) => (
-                      <button
-                        key={h}
-                        type="button"
-                        onClick={() => setValue("heightMm", h)}
-                        className="text-[11px] px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white"
-                      >
-                        {h}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">
-                    Ширина (W), мм
-                  </label>
-                  <Controller
-                    name="widthMm"
-                    control={control}
-                    render={({ field }) => (
-                      <input
-                        type="number"
-                        min="50"
-                        step="10"
-                        value={field.value || ""}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-xl px-4 py-2.5 text-white font-mono text-sm outline-none"
-                        placeholder="600"
-                      />
-                    )}
-                  />
-                  {/* Quick sizes */}
-                  <div className="flex gap-1 pt-1">
-                    {[300, 500, 600, 1000].map((w) => (
-                      <button
-                        key={w}
-                        type="button"
-                        onClick={() => setValue("widthMm", w)}
-                        className="text-[11px] px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white"
-                      >
-                        {w}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            <div className="space-y-3 pt-2 border-t border-slate-800">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-300">
+                  Форма и точные размеры гильзы / проема:
+                </span>
+                <span className="text-xs font-mono text-orange-400 font-bold">
+                  {formValues.shape === "rect" ? `${formValues.widthMm} × ${formValues.heightMm} мм` : `Ø ${formValues.diameterMm} мм`}
+                </span>
               </div>
-            ) : (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-300">
-                  Диаметр круглого проема (Ø D), мм
-                </label>
-                <Controller
-                  name="diameterMm"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      type="number"
-                      min="50"
-                      step="10"
-                      value={field.value || ""}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-xl px-4 py-2.5 text-white font-mono text-sm outline-none"
-                      placeholder="300"
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setValue("shape", "round")}
+                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                    formValues.shape === "round"
+                      ? "bg-orange-500/10 border-orange-500 text-white font-medium shadow-md shadow-orange-950/20"
+                      : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <div className="text-sm font-semibold mb-0.5">Круглая гильза (труба)</div>
+                  <div className="text-xs text-slate-500 font-mono">Внутренний диаметр (Ø D)</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setValue("shape", "rect")}
+                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                    formValues.shape === "rect"
+                      ? "bg-orange-500/10 border-orange-500 text-white font-medium shadow-md shadow-orange-950/20"
+                      : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <div className="text-sm font-semibold mb-0.5">Прямоугольный короб / проем</div>
+                  <div className="text-xs text-slate-500 font-mono">Высота (H) × Ширина (W)</div>
+                </button>
+              </div>
+
+              {/* Dimension Inputs */}
+              {formValues.shape === "rect" ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-300">
+                      Высота (H), мм
+                    </label>
+                    <Controller
+                      name="heightMm"
+                      control={control}
+                      render={({ field }) => (
+                        <input
+                          type="number"
+                          min="50"
+                          step="10"
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-xl px-4 py-2.5 text-white font-mono text-sm outline-none"
+                          placeholder="400"
+                        />
+                      )}
                     />
-                  )}
-                />
-                <div className="flex gap-1 pt-1">
-                  {[100, 150, 200, 300, 400, 500].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setValue("diameterMm", d)}
-                      className="text-[11px] px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white"
-                    >
-                      Ø{d}
-                    </button>
-                  ))}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-300">
+                      Ширина (W), мм
+                    </label>
+                    <Controller
+                      name="widthMm"
+                      control={control}
+                      render={({ field }) => (
+                        <input
+                          type="number"
+                          min="50"
+                          step="10"
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-xl px-4 py-2.5 text-white font-mono text-sm outline-none"
+                          placeholder="600"
+                        />
+                      )}
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-300">
+                    Внутренний диаметр круглой гильзы (Ø D_внутр), мм
+                  </label>
+                  <Controller
+                    name="diameterMm"
+                    control={control}
+                    render={({ field }) => (
+                      <input
+                        type="number"
+                        min="30"
+                        step="5"
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-xl px-4 py-2.5 text-white font-mono text-sm outline-none"
+                        placeholder="150"
+                      />
+                    )}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* System Settings (EI + Application Method + Humidity) */}
@@ -752,272 +1119,423 @@ ${cablesText || "  (Кабели не указаны)"}
 
         {/* RESULTS PANEL (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          {/* CRITICAL VALIDATION GAUGE (0 - 60% MAX) */}
-          <div
-            className={`border rounded-2xl p-5 shadow-2xl transition-all ${
-              result.isBlocked
-                ? "bg-red-950/40 border-red-700/80 shadow-red-950/50"
-                : result.fillRatioPercent > 45
-                ? "bg-amber-950/20 border-amber-600/50"
-                : "bg-slate-900/90 border-slate-800"
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center">
-                {result.isBlocked ? (
-                  <AlertTriangle className="w-4 h-4 text-red-400 mr-1.5" />
-                ) : (
-                  <CheckCircle className="w-4 h-4 text-emerald-400 mr-1.5" />
-                )}
-                Заполнение проема кабелями
-              </span>
-              <span className="text-xs font-mono font-bold text-slate-400">
-                Макс. норматив:{" "}
-                <strong className="text-orange-400">60%</strong>
-              </span>
-            </div>
-
-            {/* Gauge Percentage Number */}
-            <div className="flex items-baseline justify-between my-2">
-              <div
-                className={`text-3xl font-black font-mono tracking-tight ${
-                  result.isBlocked
-                    ? "text-red-400"
-                    : result.fillRatioPercent > 45
-                    ? "text-amber-400"
-                    : "text-emerald-400"
+          <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl relative space-y-5">
+            {/* Tab switch: Materials vs Builder Task */}
+            <div className="flex items-center p-1 bg-slate-950 border border-slate-800 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setActiveRightTab("materials")}
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+                  activeRightTab === "materials"
+                    ? "bg-orange-600 text-white shadow-md shadow-orange-950/40"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                {result.fillRatioPercent}%
-              </div>
-              <div className="text-xs text-slate-400 font-mono">
-                {result.cablesAreaMm2.toLocaleString()} / {result.openingAreaMm2.toLocaleString()} мм²
-              </div>
-            </div>
+                <Layers className="w-3.5 h-3.5" />
+                <span>Материалы ОЗС</span>
+              </button>
 
-            {/* Progress Bar with 60% Marker */}
-            <div className="relative w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 my-2">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  result.isBlocked
-                    ? "bg-red-600"
-                    : result.fillRatioPercent > 45
-                    ? "bg-amber-500"
-                    : "bg-emerald-500"
+              <button
+                type="button"
+                onClick={() => setActiveRightTab("builder_task")}
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+                  activeRightTab === "builder_task"
+                    ? "bg-orange-600 text-white shadow-md shadow-orange-950/40"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
-                style={{
-                  width: `${Math.min(100, (result.fillRatioPercent / 100) * 100)}%`,
-                }}
-              />
-              {/* 60% threshold vertical marker */}
-              <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-400 z-10"
-                style={{ left: "60%" }}
-                title="Максимальный допустимый лимит: 60%"
-              />
-            </div>
-            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-              <span>0%</span>
-              <span className="text-red-400 font-semibold">60% макс.</span>
-              <span>100%</span>
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Задание строителям ({sleeveTag})</span>
+              </button>
             </div>
 
-            {/* Critical error or success message */}
-            {result.isBlocked ? (
-              <div className="mt-3 p-3 rounded-xl bg-red-900/40 border border-red-600 text-xs text-red-200 space-y-1">
-                <div className="font-bold flex items-center text-red-300">
-                  <Lock className="w-3.5 h-3.5 mr-1 text-red-400" />
-                  РАСЧЕТ ЗАБЛОКИРОВАН НОРМАТИВОМ!
-                </div>
-                <p>
-                  Загальний дозволений переріз кабелів не може бути більше 60% від площі перерізу проходки!
-                </p>
-                <p className="text-[11px] text-red-300/80 pt-1">
-                  💡 <strong>Рекомендация:</strong> Увеличьте высоту или ширину проема, либо распределите часть кабелей во вторую отдельную проходку.
-                </p>
-              </div>
-            ) : (
-              <div className="mt-2 text-[11px] text-slate-400">
-                ✓ Норматив заполнения соблюден. Свободно еще{" "}
-                <strong className="text-emerald-400 font-mono">
-                  {Math.max(0, 60 - result.fillRatioPercent).toFixed(1)}%
-                </strong>{" "}
-                допустимого объема проходки.
-              </div>
-            )}
-          </div>
-
-          {/* MATERIAL SPECIFICATION OUTPUTS */}
-          <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-2xl relative">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
-              <div className="flex items-center space-x-2">
-                <Layers className="w-5 h-5 text-red-500" />
-                <h3 className="text-lg font-bold text-white">Ведомость материалов</h3>
-              </div>
-              <span className="text-xs font-mono px-2 py-0.5 rounded bg-red-950/80 text-red-400 border border-red-800/40">
-                UNIVERSALSCHOTT
-              </span>
-            </div>
-
-            {result.isBlocked ? (
-              <div className="py-12 px-4 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-red-950 border border-red-800 flex items-center justify-center mx-auto text-red-400">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <div className="text-sm font-semibold text-slate-300">
-                  Расчет заблокирован
-                </div>
-                <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                  Устраните превышение коэффициента заполнения (&le; 60%), чтобы сформировать спецификацию материалов.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* 1. Mineral Wool Boards */}
-                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
-                      Минераловатная жесткая плита (150 кг/м³)
-                    </span>
-                    <span className="text-[11px] font-mono text-orange-400 font-bold">
-                      {result.boardLayers} {result.boardLayers === 1 ? "слой" : "слоя"}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <div className="text-2xl font-black text-white font-mono tracking-tight">
-                      {result.boardAreaM2}
-                    </div>
-                    <div className="text-sm font-mono text-slate-400 font-semibold">
-                      м²
-                    </div>
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-1">
-                    {result.boardLayers === 1
-                      ? "EI 60: 1 слой плиты толщиной 50 мм"
-                      : "EI 180: 2 слоя плиты (2×50 мм) с двух сторон проходки"}
-                  </div>
-                </div>
-
-                {/* 2. Loose Mineral Wool */}
-                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
-                      Рассыпная минеральная вата (базальт)
-                    </span>
-                    <span className="text-[11px] font-mono text-slate-400">
-                      для заделки полостей
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <div className="text-2xl font-black text-white font-mono tracking-tight">
-                      {result.mineralWoolMassKg}
-                    </div>
-                    <div className="text-sm font-mono text-slate-400 font-semibold">
-                      кг
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. FLAMMOPLAST KS 1 */}
-                <div className="p-4 rounded-xl bg-gradient-to-br from-orange-950/30 to-slate-950/80 border border-orange-900/40">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-orange-300 font-semibold uppercase tracking-wider">
-                      FLAMMOPLAST KS 1 (огнезащита)
-                    </span>
-                    <span className="text-[11px] font-mono text-slate-400">
-                      потери: {result.applicationLossFactor === 1.1 ? "+10%" : "+30%"}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <div className="text-3xl font-black text-orange-400 font-mono tracking-tight">
-                      {result.ks1MassKg}
-                    </div>
-                    <div className="text-sm font-mono text-orange-300 font-semibold">
-                      кг
-                    </div>
-                  </div>
-                  <div className="mt-2.5 pt-2 border-t border-orange-900/30 flex items-center justify-between">
-                    <span className="text-xs text-slate-400">Вёдра (по 12.5 кг):</span>
-                    <div className="text-xs font-bold font-mono text-white bg-orange-600/30 border border-orange-500/40 px-2 py-0.5 rounded">
-                      {result.ks1BucketsCount} шт.
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. PYRO-SAFE KS 3 (Ablative Mastic) */}
-                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
-                      Абляционная мастика PYRO-SAFE KS 3
-                    </span>
-                    <span className="text-[11px] font-mono text-slate-400">
-                      герметизация щелей и пучков
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <div className="text-2xl font-black text-white font-mono tracking-tight">
-                      {result.ks3MassKg}
-                    </div>
-                    <div className="text-sm font-mono text-slate-400 font-semibold">
-                      кг
-                    </div>
-                  </div>
-                </div>
-
-                {/* 5. Protective Varnish SP-2 */}
+            {/* TAB 1: Materials Output */}
+            {activeRightTab === "materials" && (
+              <div className="space-y-5">
+                {/* CRITICAL VALIDATION GAUGE (0 - 60% MAX) */}
                 <div
-                  className={`p-4 rounded-xl border transition-all ${
-                    formValues.humidityGt85
-                      ? "bg-sky-950/20 border-sky-800/60"
-                      : "bg-slate-950/40 border-slate-900 opacity-60"
+                  className={`border rounded-2xl p-5 shadow-2xl transition-all ${
+                    result.isBlocked
+                      ? "bg-red-950/40 border-red-700/80 shadow-red-950/50"
+                      : result.fillRatioPercent > 45
+                      ? "bg-amber-950/20 border-amber-600/50"
+                      : "bg-slate-900/90 border-slate-800"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-sky-300 font-semibold uppercase tracking-wider flex items-center">
-                      <Droplets className="w-3.5 h-3.5 mr-1 text-sky-400" />
-                      Защитный лак PYRO-SAFE SP-2
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center">
+                      {result.isBlocked ? (
+                        <AlertTriangle className="w-4 h-4 text-red-400 mr-1.5" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4 text-emerald-400 mr-1.5" />
+                      )}
+                      Заполнение проема кабелями
                     </span>
-                    <span className="text-[11px] font-mono text-slate-400">0.175 кг/м²</span>
+                    <span className="text-xs font-mono font-bold text-slate-400">
+                      Макс. норматив:{" "}
+                      <strong className="text-orange-400">60%</strong>
+                    </span>
                   </div>
-                  <div className="flex items-baseline justify-between mt-2">
+
+                  {/* Gauge Percentage Number */}
+                  <div className="flex items-baseline justify-between my-2">
                     <div
-                      className={`text-2xl font-black font-mono tracking-tight ${
-                        formValues.humidityGt85 ? "text-sky-300" : "text-slate-500"
+                      className={`text-3xl font-black font-mono tracking-tight ${
+                        result.isBlocked
+                          ? "text-red-400"
+                          : result.fillRatioPercent > 45
+                          ? "text-amber-400"
+                          : "text-emerald-400"
                       }`}
                     >
-                      {result.sp2MassKg}
+                      {result.fillRatioPercent}%
                     </div>
-                    <div className="text-sm font-mono text-sky-400 font-semibold">
-                      кг
+                    <div className="text-xs text-slate-400 font-mono">
+                      {result.cablesAreaMm2.toLocaleString()} / {result.openingAreaMm2.toLocaleString()} мм²
                     </div>
                   </div>
+
+                  {/* Progress Bar with 60% Marker */}
+                  <div className="relative w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 my-2">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        result.isBlocked
+                          ? "bg-red-600"
+                          : result.fillRatioPercent > 45
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                      }`}
+                      style={{
+                        width: `${Math.min(100, (result.fillRatioPercent / 100) * 100)}%`,
+                      }}
+                    />
+                    {/* 60% threshold vertical marker */}
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-red-400 z-10"
+                      style={{ left: "60%" }}
+                      title="Максимальный допустимый лимит: 60%"
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>0%</span>
+                    <span className="text-red-400 font-semibold">60% макс.</span>
+                    <span>100%</span>
+                  </div>
+
+                  {/* Critical error or success message */}
+                  {result.isBlocked ? (
+                    <div className="mt-3 p-3 rounded-xl bg-red-900/40 border border-red-600 text-xs text-red-200 space-y-1">
+                      <div className="font-bold flex items-center text-red-300">
+                        <Lock className="w-3.5 h-3.5 mr-1 text-red-400" />
+                        РАСЧЕТ ЗАБЛОКИРОВАН НОРМАТИВОМ!
+                      </div>
+                      <p>
+                        Загальний дозволений переріз кабелів не може бути більше 60% від площі перерізу проходки!
+                      </p>
+                      <p className="text-[11px] text-red-300/80 pt-1">
+                        💡 <strong>Рекомендация:</strong> Выберите гильзу большего диаметра или короб в блоке подбора выше.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-[11px] text-slate-400">
+                      ✓ Норматив заполнения соблюден. Свободно еще{" "}
+                      <strong className="text-emerald-400 font-mono">
+                        {Math.max(0, 60 - result.fillRatioPercent).toFixed(1)}%
+                      </strong>{" "}
+                      допустимого объема проходки.
+                    </div>
+                  )}
+                </div>
+
+                {/* MATERIAL SPECIFICATION OUTPUTS */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div className="flex items-center space-x-2">
+                      <Layers className="w-4 h-4 text-orange-500" />
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                        Ведомость материалов ОЗС
+                      </h3>
+                    </div>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-orange-950/80 text-orange-400 border border-orange-800/40">
+                      UNIVERSALSCHOTT
+                    </span>
+                  </div>
+
+                  {!result.isBlocked && (
+                    <div className="space-y-3">
+                      {/* 1. Mineral Wool Boards */}
+                      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
+                            Минераловатная жесткая плита (150 кг/м³)
+                          </span>
+                          <span className="text-[11px] font-mono text-orange-400 font-bold">
+                            {result.boardLayers} {result.boardLayers === 1 ? "слой" : "слоя"}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline justify-between mt-1.5">
+                          <div className="text-2xl font-black text-white font-mono tracking-tight">
+                            {result.boardAreaM2}
+                          </div>
+                          <div className="text-sm font-mono text-slate-400 font-semibold">
+                            м²
+                          </div>
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-1">
+                          {result.boardLayers === 1
+                            ? "EI 60: 1 слой плиты толщиной 50 мм"
+                            : "EI 180: 2 слоя плиты (2×50 мм) с двух сторон проходки"}
+                        </div>
+                      </div>
+
+                      {/* 2. Loose Mineral Wool */}
+                      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
+                            Рассыпная минеральная вата (базальт)
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-400">
+                            набивка полостей
+                          </span>
+                        </div>
+                        <div className="flex items-baseline justify-between mt-1.5">
+                          <div className="text-2xl font-black text-white font-mono tracking-tight">
+                            {result.mineralWoolMassKg}
+                          </div>
+                          <div className="text-sm font-mono text-slate-400 font-semibold">
+                            кг
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 3. FLAMMOPLAST KS 1 */}
+                      <div className="p-3.5 rounded-xl bg-gradient-to-br from-orange-950/30 to-slate-950/80 border border-orange-900/40">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-orange-300 font-semibold uppercase tracking-wider">
+                            FLAMMOPLAST KS 1 (огнезащита)
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-400">
+                            потери: {result.applicationLossFactor === 1.1 ? "+10%" : "+30%"}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline justify-between mt-1.5">
+                          <div className="text-3xl font-black text-orange-400 font-mono tracking-tight">
+                            {result.ks1MassKg}
+                          </div>
+                          <div className="text-sm font-mono text-orange-300 font-semibold">
+                            кг
+                          </div>
+                        </div>
+                        <div className="mt-2 pt-1.5 border-t border-orange-900/30 flex items-center justify-between">
+                          <span className="text-xs text-slate-400">Вёдра (по 12.5 кг):</span>
+                          <div className="text-xs font-bold font-mono text-white bg-orange-600/30 border border-orange-500/40 px-2 py-0.5 rounded">
+                            {result.ks1BucketsCount} шт.
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 4. PYRO-SAFE KS 3 (Ablative Mastic) */}
+                      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
+                            Абляционная мастика PYRO-SAFE KS 3
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-400">
+                            герметизация зазоров
+                          </span>
+                        </div>
+                        <div className="flex items-baseline justify-between mt-1.5">
+                          <div className="text-2xl font-black text-white font-mono tracking-tight">
+                            {result.ks3MassKg}
+                          </div>
+                          <div className="text-sm font-mono text-slate-400 font-semibold">
+                            кг
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 5. Protective Varnish SP-2 */}
+                      <div
+                        className={`p-3.5 rounded-xl border transition-all ${
+                          formValues.humidityGt85
+                            ? "bg-sky-950/20 border-sky-800/60"
+                            : "bg-slate-950/40 border-slate-900 opacity-60"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-sky-300 font-semibold uppercase tracking-wider flex items-center">
+                            <Droplets className="w-3.5 h-3.5 mr-1 text-sky-400" />
+                            Защитный лак PYRO-SAFE SP-2
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-400">0.175 кг/м²</span>
+                        </div>
+                        <div className="flex items-baseline justify-between mt-1.5">
+                          <div
+                            className={`text-2xl font-black font-mono tracking-tight ${
+                              formValues.humidityGt85 ? "text-sky-300" : "text-slate-500"
+                            }`}
+                          >
+                            {result.sp2MassKg}
+                          </div>
+                          <div className="text-sm font-mono text-sky-400 font-semibold">
+                            кг
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Actions */}
+            {/* TAB 2: Builder Task Sheet */}
+            {activeRightTab === "builder_task" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                  <div>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center">
+                      <Wrench className="w-4 h-4 mr-2 text-orange-500" />
+                      Задание строителям
+                    </h3>
+                    <span className="text-[11px] text-slate-400">
+                      Марка в чертежах: <strong className="text-orange-400 font-mono">{sleeveTag}</strong>
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-orange-950/80 border border-orange-800/40 text-[10px] font-mono text-orange-300">
+                    КЖ / АР / ЭОМ
+                  </span>
+                </div>
+
+                {/* Printable / Structured Task Card */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3.5 text-xs text-slate-300">
+                  {/* Specification Table */}
+                  <div className="space-y-2 border-b border-slate-800 pb-3">
+                    <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
+                      1. Параметры закладной детали:
+                    </span>
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div>
+                        <span className="text-slate-500 block">Тип изделия:</span>
+                        <span className="font-semibold text-white">
+                          {formValues.shape === "round" ? "Стальная труба ГОСТ 10704" : "Стальной короб ГОСТ 19903"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Типоразмер:</span>
+                        <span className="font-semibold text-orange-300 font-mono">
+                          {currentSleeveSpec}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Конструкция:</span>
+                        <span className="text-white">
+                          {isFloorPenetration ? "Перекрытие" : "Стена"}, {wallThicknessMm} мм
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Длина гильзы:</span>
+                        <span className="font-bold text-emerald-400 font-mono">
+                          L = {sleeveLengthInfo.totalLengthMm} мм
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-1 p-2 bg-slate-900 rounded-lg text-[11px]">
+                      <span className="text-slate-400 block mb-0.5 font-medium">Проектные выступы:</span>
+                      <span className="text-white">
+                        {isFloorPenetration
+                          ? `• Выпуск сверху: +${sleeveLengthInfo.protrusionSide1Mm} мм выше чистого пола (ПУЭ 2.1.58)\n• Выпуск снизу: +${sleeveLengthInfo.protrusionSide2Mm} мм ниже потолка`
+                          : `• Выпуск с каждой стороны: по +${sleeveLengthInfo.protrusionSide1Mm} мм под штукатурку и чистовую отделку`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Builder Instructions */}
+                  <div className="space-y-1.5 border-b border-slate-800 pb-3">
+                    <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
+                      2. Указания строителям по установке:
+                    </span>
+                    <ul className="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
+                      <li>Установить гильзу в опалубку строго по оси кабельной трассы до бетонирования (или заделать в готовый проем безусадочным раствором М100 на всю глубину).</li>
+                      <li>Торцы и внутреннюю поверхность зачистить от заусенцев, острых кромок и сварочных брызг.</li>
+                      <li>Покрыть гильзу антикоррозийным грунтом ГФ-021 за 2 раза.</li>
+                      <li>Выдержать нормативные проектные выступы.</li>
+                      <li>Жестко зафиксировать от смещения при укладке бетона.</li>
+                    </ul>
+                  </div>
+
+                  {/* Cables Verification */}
+                  <div className="space-y-1.5 border-b border-slate-800 pb-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-mono text-slate-400 tracking-wider">
+                        3. Прокладываемые кабели и сечение:
+                      </span>
+                      <span className={`font-mono text-[11px] font-bold ${result.fillRatioPercent > 60 ? "text-red-400" : "text-emerald-400"}`}>
+                        Заполнение: {result.fillRatioPercent}% (норма ≤ 60%)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Суммарная площадь кабелей: <strong>{(totalCablesAreaMm2 / 100).toFixed(1)} см²</strong> из <strong>{(result.openingAreaM2 * 10000).toFixed(1)} см²</strong> просвета гильзы.
+                    </p>
+                  </div>
+
+                  {/* Subsequent Firestop */}
+                  <div className="space-y-1 text-[11px]">
+                    <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
+                      4. Заделка ОЗС (электромонтажниками):
+                    </span>
+                    <p className="text-slate-400 leading-normal">
+                      После протяжки кабелей полость гильзы подлежит огнезащитной заделке сертифицированной системой <strong className="text-white">PYRO-SAFE UNIVERSALSCHOTT ({PENETRATION_EI_NORMS[formValues.fireResistance].label})</strong> на основе плит 150 кг/м³, состава FLAMMOPLAST KS 1 и мастики KS 3.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Builder Task Actions */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyBuilderTask}
+                    className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+                  >
+                    {copiedBuilderTask ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
+                        Скопировано!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                        Копировать задание
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="w-full inline-flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+                  >
+                    <Printer className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                    Печать задания
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* General Actions */}
             {!result.isBlocked && (
-              <div className="mt-6 pt-5 border-t border-slate-800 space-y-3 no-print">
+              <div className="mt-4 pt-4 border-t border-slate-800 space-y-3 no-print">
                 <div className="space-y-1">
                   <input
                     type="text"
                     value={positionTitle}
                     onChange={(e) => setPositionTitle(e.target.value)}
-                    placeholder="Наименование (напр.: Проходка П-1 в щитовой)"
+                    placeholder={`Наименование позиции в проекте (по умолч.: ${sleeveTag})`}
                     className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={handleAddPosition}
-                    className="flex items-center justify-center px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-medium text-xs shadow-lg shadow-red-950/40 transition-all active:scale-[0.98]"
-                  >
-                    <PlusCircle className="w-4 h-4 mr-1.5" />
-                    В спецификацию
-                  </button>
-
                   <button
                     type="button"
                     onClick={handleCopy}
@@ -1031,16 +1549,25 @@ ${cablesText || "  (Кабели не указаны)"}
                     ) : (
                       <>
                         <Copy className="w-4 h-4 mr-1.5" />
-                        Копировать
+                        Копировать расчет ОЗС
                       </>
                     )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleAddPosition}
+                    className="flex items-center justify-center px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-medium text-xs shadow-lg shadow-red-950/40 transition-all active:scale-[0.98]"
+                  >
+                    <PlusCircle className="w-4 h-4 mr-1.5" />
+                    В спецификацию
                   </button>
                 </div>
 
                 {addedToast && (
                   <div className="p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 text-xs text-center flex items-center justify-center">
                     <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                    Проходка успешно добавлена в сводную ведомость проекта!
+                    Позиция {sleeveTag} успешно добавлена в сводную ведомость проекта!
                   </div>
                 )}
               </div>

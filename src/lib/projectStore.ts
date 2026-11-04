@@ -39,6 +39,9 @@ export interface ProjectPenetrationItem {
     fireResistance: string;
     applicationMethodName: string;
     humidityGt85: boolean;
+    sleeveTag?: string;
+    sleeveSpec?: string;
+    wallThicknessMm?: number;
   };
   result: PenetrationResult;
 }
@@ -71,6 +74,9 @@ export interface ProjectFlammotectPenetrationItem {
     penetrantsSummary: string;
     applicationMethodName: string;
     locationTypeName: string;
+    sleeveTag?: string;
+    sleeveSpec?: string;
+    wallThicknessMm?: number;
   };
   result: FlammotectPenetrationResult;
 }
