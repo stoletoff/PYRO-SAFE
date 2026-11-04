@@ -279,3 +279,4 @@ export function PenetrationPenetrantsSection({ calc }: PenetrationPenetrantsSect
     </div>
   );
 }
+

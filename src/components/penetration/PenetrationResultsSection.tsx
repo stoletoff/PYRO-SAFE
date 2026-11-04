@@ -416,3 +416,4 @@ export function PenetrationResultsSection({ calc }: PenetrationResultsSectionPro
     </div>
   );
 }
+

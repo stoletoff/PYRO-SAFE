@@ -391,3 +391,4 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
 }
 
 export type PenetrationCalculatorReturn = ReturnType<typeof usePenetrationCalculator>;
+
