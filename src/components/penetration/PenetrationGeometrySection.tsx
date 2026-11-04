@@ -235,8 +235,8 @@ export function PenetrationGeometrySection({ calc }: PenetrationGeometrySectionP
             </span>
             <span className="text-[11px] text-slate-400 block mt-0.5">
               Заполнение:{" "}
-              <strong className={sleeveRec.fillRatioPercent > 50 ? "text-amber-400" : "text-emerald-400"}>
-                {sleeveRec.fillRatioPercent}%
+              <strong className={sleeveRec.fillPercent > 50 ? "text-amber-400" : "text-emerald-400"}>
+                {sleeveRec.fillPercent}%
               </strong>{" "}
               (лимит ПУЭ ≤ 60%)
             </span>
