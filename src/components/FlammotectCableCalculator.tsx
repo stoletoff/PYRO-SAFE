@@ -114,9 +114,16 @@ export function FlammotectCableCalculator({
     (t) => t.id === formValues.installationType
   )!;
 
+  const isBundle = formValues.installationType === "bundle";
+
   const isTray =
     formValues.installationType === "tray_solid" ||
     formValues.installationType === "tray_mesh";
+
+  const effectiveDiaMm =
+    isBundle
+      ? result.calculatedBundleDiameterMm || Number(formValues.dimensionMm) || 0
+      : Number(formValues.dimensionMm) || 0;
 
   const handleCopy = () => {
     const isBundle = formValues.installationType === "bundle";
@@ -250,7 +257,9 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-6">
             <h2 className="text-base font-bold text-white flex items-center justify-between border-b border-slate-800 pb-3">
               <span>Параметры кабельной трассы</span>
-              <span className="text-xs font-normal text-slate-400">Шаг 1 из 2</span>
+              <span className="text-xs font-normal text-slate-400">
+                {isBundle ? "4 этапа расчета" : "3 этапа расчета"}
+              </span>
             </h2>
 
             {/* 1. Installation Type Selector */}
@@ -276,113 +285,21 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
               />
             </div>
 
-            {/* 2. Geometric Dimensions */}
-            <div className="space-y-4 pt-2">
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                2. Геометрия кабельной трассы
-              </label>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Length L */}
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-xs font-medium text-slate-300">
-                      Длина трассы (L), м
-                    </label>
-                    <span className="text-[11px] text-slate-500">В метрах погонных</span>
-                  </div>
-                  <Controller
-                    control={control}
-                    name="lengthM"
-                    render={({ field }) => (
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="any"
-                          min="0.1"
-                          placeholder="50"
-                          value={field.value ?? ""}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
-                        />
-                        <span className="absolute right-3.5 top-2.5 text-xs text-slate-500 font-mono">
-                          м
-                        </span>
-                      </div>
-                    )}
-                  />
-                  {errors.lengthM && (
-                    <p className="text-xs text-red-400 mt-1">{errors.lengthM.message}</p>
-                  )}
-                </div>
-
-                {/* Dimension d or b */}
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-xs font-medium text-slate-300">
-                      {formValues.installationType === "bundle" && formValues.bundleSizeMode !== "manual"
-                        ? "Расчетный диаметр пучка (D), мм"
-                        : currentTypeConfig.dimensionLabel}
-                    </label>
-                    <span className="text-[11px] text-teal-400 font-mono">
-                      {formValues.installationType === "bundle" && formValues.bundleSizeMode !== "manual"
-                        ? "Формула жгута"
-                        : "В миллиметрах"}
-                    </span>
-                  </div>
-                  {formValues.installationType === "bundle" && formValues.bundleSizeMode !== "manual" ? (
-                    <div className="relative">
-                      <input
-                        type="text"
-                        readOnly
-                        value={`${result.calculatedBundleDiameterMm || formValues.dimensionMm} мм`}
-                        className="w-full bg-slate-950/80 border border-teal-500/40 rounded-xl px-3.5 py-2.5 text-sm text-teal-300 font-mono font-bold cursor-default focus:outline-none"
-                      />
-                      <span className="absolute right-3 top-2.5 px-2 py-0.5 rounded bg-teal-950 text-teal-300 text-[10px] font-mono border border-teal-800/40">
-                        Авто
-                      </span>
-                    </div>
-                  ) : (
-                    <Controller
-                      control={control}
-                      name="dimensionMm"
-                      render={({ field }) => (
-                        <div className="relative">
-                          <input
-                            type="number"
-                            step="any"
-                            min="1"
-                            placeholder={currentTypeConfig.defaultDimension.toString()}
-                            value={field.value ?? ""}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
-                          />
-                          <span className="absolute right-3.5 top-2.5 text-xs text-slate-500 font-mono">
-                            мм
-                          </span>
-                        </div>
-                      )}
-                    />
-                  )}
-                  {errors.dimensionMm && (
-                    <p className="text-xs text-red-400 mt-1">{errors.dimensionMm.message}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Bundle Composition Panel */}
-              {formValues.installationType === "bundle" && (
-                <div className="p-4 bg-slate-950/90 border border-teal-800/40 rounded-2xl space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+            {/* If Bundle: Step 2 (Bundle Diameter) and Step 3 (Route & Area) */}
+            {isBundle ? (
+              <>
+                {/* 2. Bundle Diameter Determination */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <div className="flex items-center space-x-2">
                         <Layers className="w-4 h-4 text-teal-400" />
-                        <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                          Состав пучка кабелей (п. 3.2.3 Регламента)
-                        </h3>
+                        <label className="text-xs font-bold text-white uppercase tracking-wider">
+                          2. Определение диаметра пучка (D)
+                        </label>
                       </div>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        Укажите кабели в пучке (диаметр и количество). Диаметр жгута вычисляется автоматически.
+                        Сначала рассчитайте диаметр жгута по составу входящих кабелей или укажите значение вручную
                       </p>
                     </div>
 
@@ -390,31 +307,41 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                     <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 shrink-0 self-start sm:self-center">
                       <button
                         type="button"
-                        onClick={() => setValue("bundleSizeMode", "auto", { shouldValidate: true, shouldDirty: true })}
-                        className={`px-2.5 py-1 rounded text-[11px] font-medium cursor-pointer transition-colors ${
+                        onClick={() =>
+                          setValue("bundleSizeMode", "auto", {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          })
+                        }
+                        className={`px-3 py-1 rounded text-[11px] font-medium cursor-pointer transition-colors ${
                           formValues.bundleSizeMode !== "manual"
                             ? "bg-teal-600 text-white shadow-sm font-semibold"
                             : "text-slate-400 hover:text-white"
                         }`}
                       >
-                        По кабелям
+                        По составу кабелей
                       </button>
                       <button
                         type="button"
-                        onClick={() => setValue("bundleSizeMode", "manual", { shouldValidate: true, shouldDirty: true })}
-                        className={`px-2.5 py-1 rounded text-[11px] font-medium cursor-pointer transition-colors ${
+                        onClick={() =>
+                          setValue("bundleSizeMode", "manual", {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          })
+                        }
+                        className={`px-3 py-1 rounded text-[11px] font-medium cursor-pointer transition-colors ${
                           formValues.bundleSizeMode === "manual"
                             ? "bg-teal-600 text-white shadow-sm font-semibold"
                             : "text-slate-400 hover:text-white"
                         }`}
                       >
-                        Вручную
+                        Задать вручную
                       </button>
                     </div>
                   </div>
 
                   {formValues.bundleSizeMode !== "manual" ? (
-                    <div className="space-y-3">
+                    <div className="p-4 bg-slate-950/90 border border-teal-800/40 rounded-2xl space-y-4">
                       {/* Cable items list */}
                       <div className="space-y-2">
                         {bundleFields.map((fieldItem, idx) => (
@@ -452,9 +379,16 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                                         min="1"
                                         max="500"
                                         placeholder="Диаметр"
-                                        value={field.value === 0 || field.value === undefined ? "" : field.value}
+                                        value={
+                                          field.value === 0 || field.value === undefined
+                                            ? ""
+                                            : field.value
+                                        }
                                         onChange={(e) => {
-                                          const val = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                                          const val =
+                                            e.target.value === ""
+                                              ? 0
+                                              : parseFloat(e.target.value);
                                           field.onChange(isNaN(val) ? 0 : val);
                                         }}
                                         className="w-24 bg-slate-950 border border-slate-800 rounded-lg pr-7 pl-2.5 py-1.5 text-xs text-white text-right font-mono focus:outline-none focus:border-teal-500"
@@ -493,7 +427,9 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                                         min="1"
                                         max="1000"
                                         value={field.value ?? 1}
-                                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                                        onChange={(e) =>
+                                          field.onChange(parseInt(e.target.value, 10) || 1)
+                                        }
                                         className="w-10 bg-transparent text-center text-xs font-mono font-bold text-teal-400 focus:outline-none"
                                       />
                                     )}
@@ -585,46 +521,134 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                         </div>
                       </div>
 
-                      {/* Realtime calculation banner */}
-                      <div className="p-3 bg-gradient-to-r from-teal-950/40 via-slate-900 to-slate-900 border border-teal-800/40 rounded-xl space-y-1.5">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-                          <span className="text-slate-300">
+                      {/* Realtime bundle diameter calculation card */}
+                      <div className="p-3.5 bg-gradient-to-r from-teal-950/50 via-slate-900 to-slate-900 border border-teal-800/50 rounded-xl space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                          <span className="text-xs text-slate-300">
                             Всего в пучке:{" "}
-                            <strong className="text-white font-mono">
+                            <strong className="text-white font-mono font-bold">
                               {result.totalBundleCablesCount || 0} шт. кабелей
                             </strong>
                           </span>
-                          <span className="text-teal-300 font-bold font-mono">
-                            Расчетный диаметр пучка: D = {result.calculatedBundleDiameterMm || formValues.dimensionMm} мм
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-slate-400">Расчетный диаметр пучка:</span>
+                            <span className="text-sm text-teal-300 font-bold font-mono bg-teal-950/80 px-2.5 py-0.5 rounded-lg border border-teal-700/50">
+                              D = {effectiveDiaMm} мм
+                            </span>
+                          </div>
+                        </div>
+                        <div className="font-mono text-[11px] text-emerald-400 bg-slate-950/90 p-2.5 rounded-lg border border-slate-800 leading-relaxed">
+                          Формула эквивалентного диаметра жгута:
+                          <br />
+                          <span className="text-teal-300 font-semibold">
+                            D = 1.15 × √(∑ n_i × d_i²) = {effectiveDiaMm} мм
+                          </span>
+                          <span className="block text-[10px] text-slate-400 mt-1 font-sans">
+                            (где d_i — наружный диаметр кабеля, n_i — количество кабелей, 1.15 — коэффициент скрутки жгута)
                           </span>
                         </div>
-                        <div className="font-mono text-[11px] text-emerald-400 bg-slate-950/80 p-2 rounded border border-slate-800/80 leading-relaxed">
-                          Формула жгута: D = 1.15 × √(∑ n_i × d_i²) ={" "}
-                          {result.calculatedBundleDiameterMm || formValues.dimensionMm} мм
-                        </div>
-                        <p className="text-[10px] text-slate-400">
-                          Нормативный расчет по п. 3.2.3 Регламента 2022: S = L × π × D × 1.5 (коэффициент пучка 1.5).
-                        </p>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-slate-950/90 border border-teal-800/40 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-xs font-medium text-slate-300">
+                          Наружный габаритный диаметр пучка (D), мм
+                        </label>
+                        <span className="text-[11px] text-teal-400 font-mono">В миллиметрах</span>
+                      </div>
+                      <Controller
+                        control={control}
+                        name="dimensionMm"
+                        render={({ field }) => (
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="any"
+                              min="1"
+                              placeholder="40"
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
+                            />
+                            <span className="absolute right-3.5 top-2.5 text-xs text-slate-500 font-mono">
+                              мм
+                            </span>
+                          </div>
+                        )}
+                      />
+                      <p className="text-[11px] text-slate-400">
+                        Укажите измеренный внешний диаметр жгута кабелей, если состав кабелей не детализируется.
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-                      {/* Number of identical parallel bundles */}
-                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                        <div>
-                          <label className="text-xs font-medium text-slate-300 block">
-                            Количество одинаковых параллельных пучков
-                          </label>
-                          <span className="text-[11px] text-slate-500">
-                            Если по трассе проложено несколько таких пучков
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-1.5">
+                {/* 3. Route Geometry & Area Calculation per Regulation 3.2.3 */}
+                <div className="space-y-4 pt-4 border-t border-slate-800">
+                  <div>
+                    <label className="block text-xs font-bold text-white uppercase tracking-wider">
+                      3. Трасса и расчет площади (п. 3.2.3 Регламента)
+                    </label>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Диаметр пучка D подставляется в нормативную формулу расчета площади с коэффициентом пучка 1,5
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Length L */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <label className="text-xs font-medium text-slate-300">
+                          Длина трассы (L), м
+                        </label>
+                        <span className="text-[11px] text-slate-500">Погонные метры</span>
+                      </div>
+                      <Controller
+                        control={control}
+                        name="lengthM"
+                        render={({ field }) => (
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="any"
+                              min="0.1"
+                              placeholder="50"
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
+                            />
+                            <span className="absolute right-3.5 top-2.5 text-xs text-slate-500 font-mono">
+                              м
+                            </span>
+                          </div>
+                        )}
+                      />
+                      {errors.lengthM && (
+                        <p className="text-xs text-red-400 mt-1">{errors.lengthM.message}</p>
+                      )}
+                    </div>
+
+                    {/* Parallel bundles count */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <label className="text-xs font-medium text-slate-300">
+                          Количество параллельных пучков (N)
+                        </label>
+                        <span className="text-[11px] text-slate-500">Штук</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center flex-1 bg-slate-950 border border-slate-800 rounded-xl px-2 py-1">
                           <button
                             type="button"
                             onClick={() => {
                               const cur = Number(formValues.cableCount) || 1;
-                              setValue("cableCount", Math.max(1, cur - 1), { shouldValidate: true, shouldDirty: true });
+                              setValue("cableCount", Math.max(1, cur - 1), {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
                             }}
-                            className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold cursor-pointer transition-colors"
+                            className="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-sm font-bold cursor-pointer transition-colors"
                           >
                             -
                           </button>
@@ -638,7 +662,7 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                                 max="100"
                                 value={field.value ?? 1}
                                 onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
-                                className="w-12 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs font-mono font-bold text-teal-400 focus:outline-none"
+                                className="w-full bg-transparent text-center text-sm font-mono font-bold text-teal-400 focus:outline-none"
                               />
                             )}
                           />
@@ -646,84 +670,212 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                             type="button"
                             onClick={() => {
                               const cur = Number(formValues.cableCount) || 1;
-                              setValue("cableCount", cur + 1, { shouldValidate: true, shouldDirty: true });
+                              setValue("cableCount", cur + 1, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
                             }}
-                            className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold cursor-pointer transition-colors"
+                            className="w-8 h-8 flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-sm font-bold cursor-pointer transition-colors"
                           >
                             +
                           </button>
-                          <span className="text-xs text-slate-400 font-mono">шт.</span>
                         </div>
+                        <span className="text-xs text-slate-400 font-mono">пучков</span>
                       </div>
                     </div>
-                  ) : (
-                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400">
-                      Укажите габаритный диаметр пучка в поле ввода выше («{currentTypeConfig.dimensionLabel}»).
+                  </div>
+
+                  {/* Live formula substitution card */}
+                  <div className="p-4 bg-slate-950/90 border border-teal-800/40 rounded-xl space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-teal-300 uppercase tracking-wider flex items-center">
+                        <Sparkles className="w-3.5 h-3.5 mr-1.5 text-teal-400" />
+                        Нормативная подстановка в расчет площади:
+                      </span>
+                      <span className="text-white font-mono font-bold text-sm bg-teal-950 px-2.5 py-0.5 rounded border border-teal-800/50">
+                        S = {result.areaM2} м²
+                      </span>
                     </div>
-                  )}
-                </div>
-              )}
 
-              {/* Single cable count */}
-              {formValues.installationType === "single" && (
-                <div className="p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl">
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-xs font-medium text-slate-300">
-                      Количество параллельных кабелей (N)
-                    </label>
-                    <span className="text-[11px] text-slate-500">Штук</span>
+                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 font-mono text-xs text-teal-300">
+                      S = L × π × D × 1.5{Number(formValues.cableCount) > 1 ? ` × N` : ""}
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-teal-950/30 border border-teal-800/40 font-mono text-xs text-emerald-300 break-words leading-relaxed">
+                      S = {formValues.lengthM || 0} м × 3.1416 × {(effectiveDiaMm / 1000).toFixed(4)} м × 1.5{Number(formValues.cableCount) > 1 ? ` × ${formValues.cableCount} шт.` : ""} = <strong className="text-white font-bold">{result.areaM2} м²</strong>
+                    </div>
+
+                    <div className="text-[11px] text-slate-400 space-y-1 pt-1.5 border-t border-slate-800/70">
+                      <div className="flex items-start space-x-1.5">
+                        <span className="text-teal-400 font-mono font-bold">•</span>
+                        <span>
+                          <strong className="text-slate-300 font-mono">L = {formValues.lengthM || 0} м</strong> — длина кабельной трассы
+                        </span>
+                      </div>
+                      <div className="flex items-start space-x-1.5">
+                        <span className="text-teal-400 font-mono font-bold">•</span>
+                        <span>
+                          <strong className="text-slate-300 font-mono">D = {effectiveDiaMm} мм ({(effectiveDiaMm / 1000).toFixed(4)} м)</strong> — расчетный диаметр пучка из Шага 2
+                        </span>
+                      </div>
+                      <div className="flex items-start space-x-1.5">
+                        <span className="text-teal-400 font-mono font-bold">•</span>
+                        <span>
+                          <strong className="text-slate-300 font-mono">1.5</strong> — нормативный коэффициент формы пучка по п. 3.2.3 Регламента 2022 (учитывает волнистый рельеф внешней поверхности круглых кабелей в пучке)
+                        </span>
+                      </div>
+                      {Number(formValues.cableCount) > 1 && (
+                        <div className="flex items-start space-x-1.5">
+                          <span className="text-teal-400 font-mono font-bold">•</span>
+                          <span>
+                            <strong className="text-slate-300 font-mono">N = {formValues.cableCount} шт.</strong> — количество параллельных пучков
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <Controller
-                    control={control}
-                    name="cableCount"
-                    render={({ field }) => (
-                      <input
-                        type="number"
-                        min="1"
-                        value={field.value ?? 1}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
-                      />
-                    )}
-                  />
                 </div>
-              )}
+              </>
+            ) : (
+              /* Non-Bundle Installation: Step 2 Geometry */
+              <div className="space-y-4 pt-2">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  2. Геометрия кабельной трассы
+                </label>
 
-              {/* Multi-shelf tray option (New per Section 3.2.1) */}
-              {isTray && (
-                <div className="p-3 bg-teal-950/20 border border-teal-800/30 rounded-xl space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-medium text-teal-300 flex items-center">
-                      <Layers className="w-3.5 h-3.5 mr-1.5 text-teal-400" />
-                      Количество полок / ярусов в коробе (п. 3.2.1)
-                    </label>
-                    <span className="text-[11px] text-slate-400">Множитель полочек</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Length L */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-xs font-medium text-slate-300">
+                        Длина трассы (L), м
+                      </label>
+                      <span className="text-[11px] text-slate-500">В метрах погонных</span>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="lengthM"
+                      render={({ field }) => (
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.1"
+                            placeholder="50"
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
+                          />
+                          <span className="absolute right-3.5 top-2.5 text-xs text-slate-500 font-mono">
+                            м
+                          </span>
+                        </div>
+                      )}
+                    />
+                    {errors.lengthM && (
+                      <p className="text-xs text-red-400 mt-1">{errors.lengthM.message}</p>
+                    )}
                   </div>
-                  <Controller
-                    control={control}
-                    name="shelvesCount"
-                    render={({ field }) => (
-                      <input
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={field.value ?? 1}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
-                      />
-                    )}
-                  />
-                  <p className="text-[11px] text-slate-400">
-                    Согласно п. 3.2.1: если короб имеет полочки, на которых лежит кабель, площадь умножается на количество полочек.
-                  </p>
-                </div>
-              )}
-            </div>
 
-            {/* 3. Coating thickness & Application Method */}
-            <div className="space-y-4 pt-2 border-t border-slate-800">
+                  {/* Dimension d or b */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-xs font-medium text-slate-300">
+                        {currentTypeConfig.dimensionLabel}
+                      </label>
+                      <span className="text-[11px] text-teal-400 font-mono">
+                        В миллиметрах
+                      </span>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="dimensionMm"
+                      render={({ field }) => (
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            min="1"
+                            placeholder={currentTypeConfig.defaultDimension.toString()}
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
+                          />
+                          <span className="absolute right-3.5 top-2.5 text-xs text-slate-500 font-mono">
+                            мм
+                          </span>
+                        </div>
+                      )}
+                    />
+                    {errors.dimensionMm && (
+                      <p className="text-xs text-red-400 mt-1">{errors.dimensionMm.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Single cable count */}
+                {formValues.installationType === "single" && (
+                  <div className="p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-xs font-medium text-slate-300">
+                        Количество параллельных кабелей (N)
+                      </label>
+                      <span className="text-[11px] text-slate-500">Штук</span>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="cableCount"
+                      render={({ field }) => (
+                        <input
+                          type="number"
+                          min="1"
+                          value={field.value ?? 1}
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
+                        />
+                      )}
+                    />
+                  </div>
+                )}
+
+                {/* Multi-shelf tray option (Section 3.2.1) */}
+                {isTray && (
+                  <div className="p-3 bg-teal-950/20 border border-teal-800/30 rounded-xl space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-medium text-teal-300 flex items-center">
+                        <Layers className="w-3.5 h-3.5 mr-1.5 text-teal-400" />
+                        Количество полок / ярусов в коробе (п. 3.2.1)
+                      </label>
+                      <span className="text-[11px] text-slate-400">Множитель полочек</span>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="shelvesCount"
+                      render={({ field }) => (
+                        <input
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={field.value ?? 1}
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
+                        />
+                      )}
+                    />
+                    <p className="text-[11px] text-slate-400">
+                      Согласно п. 3.2.1: если короб имеет полочки, на которых лежит кабель, площадь умножается на количество полочек.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 3 (or 4): Coating thickness & Application Method */}
+            <div className="space-y-4 pt-4 border-t border-slate-800">
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                3. Толщина сухого слоя (DFT) и способ нанесения
+                {isBundle
+                  ? "4. Толщина сухого слоя (DFT) и способ нанесения"
+                  : "3. Толщина сухого слоя (DFT) и способ нанесения"}
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
