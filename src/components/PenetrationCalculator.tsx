@@ -111,6 +111,7 @@ export function PenetrationCalculator({ onAddToProject }: PenetrationCalculatorP
     fireResistance: formValues.fireResistance,
     applicationMethod: formValues.applicationMethod,
     humidityGt85: Boolean(formValues.humidityGt85),
+    wallThicknessMm: Number(wallThicknessMm) || 200,
   });
 
   // Суммарная площадь коммуникаций в проеме
@@ -248,12 +249,18 @@ ${cablesText || "  (Кабели не указаны)"}
 Коэффициент заполнения проходки: ${result.fillRatioPercent}% (макс. допустимо: 60%)
 
 РАСХОД МАТЕРИАЛОВ ОЗС:
-1. Минераловатная жесткая плита: ${result.boardAreaM2} м² (${result.boardLayers} ${result.boardLayers === 1 ? "слой" : "слоя"})
+${
+  result.isRoundSleeve
+    ? `1. Базальтовая минеральная вата 150 кг/м³ (набивка полости ${result.cavityVolumeLiters} л, толщина ${wallThicknessMm} мм): ${result.mineralWoolMassKg} кг
+2. Абляционная мастика PYRO-SAFE KS 3 (торцевые пробки ≥25 мм): ${result.ks3MassKg} кг
+3. Огнезащитное покрытие FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер по ${CONSTANTS.KS1_BUCKET_WEIGHT_KG} кг)
+4. Минплита 150 кг/м³: не требуется (в круглой гильзе полость набивается ватой)`
+    : `1. Минераловатная жесткая плита: ${result.boardAreaM2} м² (${result.boardLayers} ${result.boardLayers === 1 ? "слой" : "слоя"})
 2. Рассыпная базальтовая минвата: ${result.mineralWoolMassKg} кг
 3. Огнезащитное покрытие FLAMMOPLAST KS 1: ${result.ks1MassKg} кг (${result.ks1BucketsCount} вёдер по ${CONSTANTS.KS1_BUCKET_WEIGHT_KG} кг)
-4. Абляционная мастика PYRO-SAFE KS 3: ${result.ks3MassKg} кг
-5. Защитный лак PYRO-SAFE SP-2: ${result.sp2MassKg} кг
-Дата: ${new Date().toLocaleDateString("ru-RU")}
+4. Абляционная мастика PYRO-SAFE KS 3: ${result.ks3MassKg} кг`
+}
+${result.sp2MassKg > 0 ? `5. Защитный лак PYRO-SAFE SP-2: ${result.sp2MassKg} кг\n` : ""}Дата: ${new Date().toLocaleDateString("ru-RU")}
     `.trim();
 
     navigator.clipboard.writeText(text);
@@ -300,7 +307,11 @@ ${cablesList || "  • Кабели по кабельному журналу"}
 
 4. ПОСЛЕДУЮЩАЯ ОГНЕЗАЩИТНАЯ ЗАДЕЛКА (ОЗС):
 - Выполняется специализированной электромонтажной организацией после завершения прокладки кабелей.
-- Заделка полости гильзы выполняется огнезащитной системой PYRO-SAFE UNIVERSALSCHOTT (${PENETRATION_EI_NORMS[formValues.fireResistance].label}) на основе минераловатных плит 150 кг/м³, покрытия FLAMMOPLAST KS 1 и мастики KS 3.
+${
+  result.isRoundSleeve
+    ? `- Заделка полости гильзы: плотная объемная набивка базальтовой ватой плотностью ≥ 150 кг/м³ на всю глубину стены ${wallThicknessMm} мм (расход ваты: ${result.mineralWoolMassKg} кг, объем свободной полости: ${result.cavityVolumeLiters} л).\n- Торцы гильзы: огнезащитные пробки глубиной ≥ 25 мм из мастики PYRO-SAFE KS 3 (${result.ks3MassKg} кг) и окраска составом FLAMMOPLAST KS 1 (${result.ks1MassKg} кг). Предел огнестойкости: ${PENETRATION_EI_NORMS[formValues.fireResistance].label}.`
+    : `- Заделка проема/короба выполняется огнезащитной системой PYRO-SAFE UNIVERSALSCHOTT (${PENETRATION_EI_NORMS[formValues.fireResistance].label}) на основе минераловатных плит 150 кг/м³ (${result.boardAreaM2} м²), ваты (${result.mineralWoolMassKg} кг), покрытия FLAMMOPLAST KS 1 и мастики KS 3.`
+}
 Дата: ${new Date().toLocaleDateString("ru-RU")}
     `.trim();
 
@@ -1263,50 +1274,94 @@ ${cablesList || "  • Кабели по кабельному журналу"}
 
                   {!result.isBlocked && (
                     <div className="space-y-3">
-                      {/* 1. Mineral Wool Boards */}
-                      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
-                            Минераловатная жесткая плита (150 кг/м³)
-                          </span>
-                          <span className="text-[11px] font-mono text-orange-400 font-bold">
-                            {result.boardLayers} {result.boardLayers === 1 ? "слой" : "слоя"}
-                          </span>
-                        </div>
-                        <div className="flex items-baseline justify-between mt-1.5">
-                          <div className="text-2xl font-black text-white font-mono tracking-tight">
-                            {result.boardAreaM2}
+                      {result.isRoundSleeve ? (
+                        <>
+                          {/* Volumetric Mineral Wool Packing for Round Sleeve */}
+                          <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-950/30 to-slate-950/80 border border-amber-800/40">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-amber-300 font-semibold uppercase tracking-wider">
+                                Базальтовая минвата 150 кг/м³ (набивка гильзы)
+                              </span>
+                              <span className="text-[11px] font-mono text-amber-400">
+                                {wallThicknessMm} мм глубина
+                              </span>
+                            </div>
+                            <div className="flex items-baseline justify-between mt-1.5">
+                              <div className="text-2xl font-black text-white font-mono tracking-tight">
+                                {result.mineralWoolMassKg}
+                              </div>
+                              <div className="text-sm font-mono text-amber-400 font-semibold">
+                                кг
+                              </div>
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-1">
+                              Свободная полость: <strong className="text-amber-200 font-mono">{result.cavityVolumeLiters} л</strong> (плотная набивка с запасом 20%)
+                            </div>
                           </div>
-                          <div className="text-sm font-mono text-slate-400 font-semibold">
-                            м²
-                          </div>
-                        </div>
-                        <div className="text-[11px] text-slate-500 mt-1">
-                          {result.boardLayers === 1
-                            ? "EI 60: 1 слой плиты толщиной 50 мм"
-                            : "EI 180: 2 слоя плиты (2×50 мм) с двух сторон проходки"}
-                        </div>
-                      </div>
 
-                      {/* 2. Loose Mineral Wool */}
-                      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
-                            Рассыпная минеральная вата (базальт)
-                          </span>
-                          <span className="text-[11px] font-mono text-slate-400">
-                            набивка полостей
-                          </span>
-                        </div>
-                        <div className="flex items-baseline justify-between mt-1.5">
-                          <div className="text-2xl font-black text-white font-mono tracking-tight">
-                            {result.mineralWoolMassKg}
+                          {/* 0 m² Badge for rigid boards */}
+                          <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs">
+                            <div>
+                              <span className="text-slate-400 block font-medium">
+                                Жесткая минплита (150 кг/м³):
+                              </span>
+                              <span className="text-[10px] text-slate-500">
+                                Не требуется для круглых гильз (набивается ватой)
+                              </span>
+                            </div>
+                            <span className="text-xs font-mono font-bold text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                              0 м²
+                            </span>
                           </div>
-                          <div className="text-sm font-mono text-slate-400 font-semibold">
-                            кг
+                        </>
+                      ) : (
+                        <>
+                          {/* 1. Mineral Wool Boards */}
+                          <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
+                                Минераловатная жесткая плита (150 кг/м³)
+                              </span>
+                              <span className="text-[11px] font-mono text-orange-400 font-bold">
+                                {result.boardLayers} {result.boardLayers === 1 ? "слой" : "слоя"}
+                              </span>
+                            </div>
+                            <div className="flex items-baseline justify-between mt-1.5">
+                              <div className="text-2xl font-black text-white font-mono tracking-tight">
+                                {result.boardAreaM2}
+                              </div>
+                              <div className="text-sm font-mono text-slate-400 font-semibold">
+                                м²
+                              </div>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-1">
+                              {result.boardLayers === 1
+                                ? "EI 60: 1 слой плиты толщиной 50 мм"
+                                : "EI 180: 2 слоя плиты (2×50 мм) с двух сторон проходки"}
+                            </div>
                           </div>
-                        </div>
-                      </div>
+
+                          {/* 2. Loose Mineral Wool */}
+                          <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">
+                                Рассыпная минеральная вата (базальт)
+                              </span>
+                              <span className="text-[11px] font-mono text-slate-400">
+                                набивка полостей
+                              </span>
+                            </div>
+                            <div className="flex items-baseline justify-between mt-1.5">
+                              <div className="text-2xl font-black text-white font-mono tracking-tight">
+                                {result.mineralWoolMassKg}
+                              </div>
+                              <div className="text-sm font-mono text-slate-400 font-semibold">
+                                кг
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
 
                       {/* 3. FLAMMOPLAST KS 1 */}
                       <div className="p-3.5 rounded-xl bg-gradient-to-br from-orange-950/30 to-slate-950/80 border border-orange-900/40">
@@ -1484,9 +1539,15 @@ ${cablesList || "  • Кабели по кабельному журналу"}
                     <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
                       4. Заделка ОЗС (электромонтажниками):
                     </span>
-                    <p className="text-slate-400 leading-normal">
-                      После протяжки кабелей полость гильзы подлежит огнезащитной заделке сертифицированной системой <strong className="text-white">PYRO-SAFE UNIVERSALSCHOTT ({PENETRATION_EI_NORMS[formValues.fireResistance].label})</strong> на основе плит 150 кг/м³, состава FLAMMOPLAST KS 1 и мастики KS 3.
-                    </p>
+                    {result.isRoundSleeve ? (
+                      <p className="text-slate-400 leading-normal">
+                        Полость гильзы набивается <strong className="text-amber-300">базальтовой ватой 150 кг/м³</strong> на всю глубину стены ({wallThicknessMm} мм) — потребность <strong className="text-white font-mono">{result.mineralWoolMassKg} кг</strong> (объем свободной полости {result.cavityVolumeLiters} л). Торцы гильзы с двух сторон герметизируются мастикой <strong className="text-white font-mono">PYRO-SAFE KS 3</strong> на глубину ≥ 25 мм ({result.ks3MassKg} кг) и окрашиваются <strong className="text-white font-mono">FLAMMOPLAST KS 1</strong> ({result.ks1MassKg} кг). Предел огнестойкости: <strong className="text-emerald-400">{PENETRATION_EI_NORMS[formValues.fireResistance].label}</strong>.
+                      </p>
+                    ) : (
+                      <p className="text-slate-400 leading-normal">
+                        После протяжки кабелей полость проема подлежит огнезащитной заделке сертифицированной системой <strong className="text-white">PYRO-SAFE UNIVERSALSCHOTT ({PENETRATION_EI_NORMS[formValues.fireResistance].label})</strong> на основе плит 150 кг/м³ ({result.boardAreaM2} м²), ваты ({result.mineralWoolMassKg} кг), покрытия FLAMMOPLAST KS 1 и мастики KS 3.
+                      </p>
+                    )}
                   </div>
                 </div>
 

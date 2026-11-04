@@ -450,7 +450,7 @@ export function ProjectSummary({
                     systemColor = "bg-red-950/80 text-red-300 border-red-800/40";
                     area = item.result.openingAreaM2;
                     ks1Kg = `${item.result.ks1MassKg} (${item.result.ks1BucketsCount}в)`;
-                    boardM2 = `${item.result.boardAreaM2} м²`;
+                    boardM2 = item.result.isRoundSleeve ? "— (гильза)" : `${item.result.boardAreaM2} м²`;
                     woolKg = `${item.result.mineralWoolMassKg} кг`;
                     paramsText = item.details.sleeveTag
                       ? `${item.details.sleeveTag}: ${item.details.sleeveSpec || item.details.dimensionsText}`
@@ -467,7 +467,7 @@ export function ProjectSummary({
                     area = item.result.openingAreaM2;
                     flammotectKg = `${item.result.coatingMassKg} (${item.result.coatingBucketsCount}в)`;
                     fillerKg = `${item.result.fillerMassKg} (${item.result.fillerBucketsCount}в)`;
-                    boardM2 = `${item.result.boardAreaM2} м²`;
+                    boardM2 = item.result.isRoundSleeve ? "— (гильза)" : `${item.result.boardAreaM2} м²`;
                     woolKg = `${item.result.looseWoolMassKg} кг`;
                     paramsText = item.details.sleeveTag
                       ? `${item.details.sleeveTag}: ${item.details.sleeveSpec || item.details.dimensionsText}`

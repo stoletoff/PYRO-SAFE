@@ -182,6 +182,8 @@ export interface PenetrationInput {
   applicationMethod: ApplicationMethod;
   /** Помещение с влажностью > 85% */
   humidityGt85: boolean;
+  /** Толщина стены/перекрытия (глубина гильзы) в мм */
+  wallThicknessMm?: number;
 }
 
 export interface PenetrationResult {
@@ -197,11 +199,17 @@ export interface PenetrationResult {
   isBlocked: boolean;
   /** Текст ошибки валидации (если есть) */
   validationError?: string;
-  /** Количество слоев минераловатных плит */
+  /** Является ли гильзой круглого сечения (объемная набивка ватой) */
+  isRoundSleeve?: boolean;
+  /** Объем свободной полости гильзы в литрах */
+  cavityVolumeLiters?: number;
+  /** Объем свободной полости гильзы в м³ */
+  cavityVolumeM3?: number;
+  /** Количество слоев минераловатных плит (0 для круглых гильз) */
   boardLayers: number;
-  /** Площадь минераловатной плиты (м²) */
+  /** Площадь минераловатной плиты (м²) (0 для круглых гильз) */
   boardAreaM2: number;
-  /** Масса рассыпной базальтовой минваты для плотной заделки (кг) */
+  /** Масса базальтовой минваты для плотной заделки (кг) */
   mineralWoolMassKg: number;
   /** Масса огнезащитного покрытия FLAMMOPLAST KS 1 (кг) */
   ks1MassKg: number;
@@ -228,6 +236,7 @@ export function calculatePenetration(input: PenetrationInput): PenetrationResult
     fireResistance,
     applicationMethod,
     humidityGt85,
+    wallThicknessMm = 200,
   } = input;
 
   // 1. Расчет площади проема
@@ -270,6 +279,12 @@ export function calculatePenetration(input: PenetrationInput): PenetrationResult
   const norms = PENETRATION_EI_NORMS[fireResistance] || PENETRATION_EI_NORMS.EI60;
   const lossFactor = APPLICATION_LOSS_FACTORS[applicationMethod] || 1.10;
 
+  const isRoundSleeve = shape === "round";
+  const cavityAreaMm2 = Math.max(0, openingAreaMm2 - cablesAreaMm2);
+  const wallDepthMm = Math.max(100, wallThicknessMm || 200);
+  const cavityVolumeM3 = (cavityAreaMm2 / 1_000_000_000) * wallDepthMm;
+  const cavityVolumeLiters = roundTo(cavityVolumeM3 * 1000, 2);
+
   if (isBlocked) {
     return {
       openingAreaM2: roundTo(openingAreaM2, 4),
@@ -278,6 +293,9 @@ export function calculatePenetration(input: PenetrationInput): PenetrationResult
       fillRatioPercent: roundTo(fillRatioPercent, 2),
       isBlocked: true,
       validationError,
+      isRoundSleeve,
+      cavityVolumeLiters: 0,
+      cavityVolumeM3: 0,
       boardLayers: norms.boardLayers,
       boardAreaM2: 0,
       mineralWoolMassKg: 0,
@@ -290,18 +308,33 @@ export function calculatePenetration(input: PenetrationInput): PenetrationResult
   }
 
   // Расчет материалов:
-  // Минплита: норма * S_проема (EI 60: 1.0 м², EI 180: 2.0 м²)
-  const boardAreaM2 = openingAreaM2 * norms.boardAreaPerM2;
+  let boardAreaM2 = 0;
+  let boardLayers: number = norms.boardLayers;
+  let mineralWoolMassKg = 0;
+  let ks3MassKg = 0;
 
-  // Рассыпная минвата: норма * S_проема (EI 60: 1.0 кг, EI 180: 1.5 кг)
-  const mineralWoolMassKg = openingAreaM2 * norms.mineralWoolKgPerM2;
+  if (isRoundSleeve) {
+    // В круглую закладную гильзу плиты не ставятся — полость трубы набивается базальтовой ватой на всю толщину стены
+    boardAreaM2 = 0;
+    boardLayers = 0;
+    // Плотная набивка базальтовой ватой 150 кг/м³ с технологическим запасом на уплотнение 20%
+    mineralWoolMassKg = roundTo(cavityVolumeM3 * 150 * 1.20, 2);
+    // Торцы герметизируются мастикой KS 3 (2 торца по 25 мм) или минимум по площади
+    const plugVolumeM3 = (cavityAreaMm2 / 1_000_000) * 0.025 * 2;
+    ks3MassKg = roundTo(
+      Math.max(openingAreaM2 * norms.ks3KgPerM2, plugVolumeM3 * 1400 * 1.10),
+      2
+    );
+  } else {
+    // Прямоугольные проемы: жесткие плиты 150 кг/м³ + рассыпная вата для швов
+    boardAreaM2 = roundTo(openingAreaM2 * norms.boardAreaPerM2, 3);
+    mineralWoolMassKg = roundTo(openingAreaM2 * norms.mineralWoolKgPerM2, 2);
+    ks3MassKg = roundTo(openingAreaM2 * norms.ks3KgPerM2, 2);
+  }
 
   // FLAMMOPLAST KS 1: базовая норма * S_проема * коэфф. потерь (кисть +10%, распылитель +30%)
   const ks1MassKg = openingAreaM2 * norms.ks1BaseKgPerM2 * lossFactor;
   const ks1BucketsCount = Math.ceil(ks1MassKg / CONSTANTS.KS1_BUCKET_WEIGHT_KG);
-
-  // Мастика PYRO-SAFE KS 3: норма * S_проема (EI 60: 3.5 кг, EI 180: 5.0 кг)
-  const ks3MassKg = openingAreaM2 * norms.ks3KgPerM2;
 
   // Защитный лак SP-2: 0.175 кг/м² при влажности > 85%
   const sp2MassKg = humidityGt85 ? openingAreaM2 * CONSTANTS.SP2_COVERAGE_RATE_KG_M2 : 0;
@@ -313,12 +346,15 @@ export function calculatePenetration(input: PenetrationInput): PenetrationResult
     fillRatioPercent: roundTo(fillRatioPercent, 2),
     isBlocked: false,
     validationError: undefined,
-    boardLayers: norms.boardLayers,
-    boardAreaM2: roundTo(boardAreaM2, 3),
-    mineralWoolMassKg: roundTo(mineralWoolMassKg, 2),
+    isRoundSleeve,
+    cavityVolumeLiters,
+    cavityVolumeM3: roundTo(cavityVolumeM3, 5),
+    boardLayers,
+    boardAreaM2,
+    mineralWoolMassKg,
     ks1MassKg: roundTo(ks1MassKg, 2),
     ks1BucketsCount,
-    ks3MassKg: roundTo(ks3MassKg, 2),
+    ks3MassKg,
     sp2MassKg: roundTo(sp2MassKg, 2),
     applicationLossFactor: lossFactor,
   };
@@ -529,6 +565,8 @@ export interface FlammotectPenetrationInput {
   applicationMethod: FlammotectApplicationMethod;
   includeCuttingLosses: boolean; // Учитывать +30% потерь на раскрой плит и набивку ваты
   isFloorPenetration?: boolean; // Перекрытие (пол/потолок) или стена
+  /** Толщина стены/перекрытия (глубина гильзы) в мм */
+  wallThicknessMm?: number;
 }
 
 export interface FlammotectPenetrationResult {
@@ -538,11 +576,17 @@ export interface FlammotectPenetrationResult {
   fillRatioPercent: number;
   isBlocked: boolean;
   validationError?: string;
-  /** Количество слоев минераловатных плит (всегда 2 слоя по 60 мм = 120 мм) */
-  boardLayers: 2;
-  /** Площадь минплиты (м²) с учетом раскроя */
+  /** Является ли гильзой круглого сечения (объемная набивка ватой) */
+  isRoundSleeve: boolean;
+  /** Объем свободной полости гильзы в литрах */
+  cavityVolumeLiters?: number;
+  /** Объем свободной полости гильзы в м³ */
+  cavityVolumeM3?: number;
+  /** Количество слоев минераловатных плит (2 для прямоугольных проемов, 0 для круглых гильз) */
+  boardLayers: number;
+  /** Площадь минплиты (м²) с учетом раскроя (0 для круглых гильз) */
   boardAreaM2: number;
-  /** Масса рассыпной минваты (кг) */
+  /** Масса базальтовой минваты для плотной заделки (кг) */
   looseWoolMassKg: number;
   /** Масса FLAMMOTECT-A coating (кг) */
   coatingMassKg: number;
@@ -574,6 +618,7 @@ export function calculateFlammotectPenetration(
     applicationMethod = "brush_10",
     includeCuttingLosses = true,
     isFloorPenetration = false,
+    wallThicknessMm = 200,
   } = input;
 
   // 1. Площадь проема
@@ -643,6 +688,12 @@ export function calculateFlammotectPenetration(
     ? FLAMMOTECT_PENETRATION_CONSTANTS.WOOL_INSTALL_LOSS_FACTOR
     : 1.0;
 
+  const isRoundSleeve = shape === "round";
+  const cavityAreaMm2 = Math.max(0, openingAreaMm2 - penetrantsAreaMm2);
+  const wallDepthMm = Math.max(100, wallThicknessMm || 200);
+  const cavityVolumeM3 = (cavityAreaMm2 / 1_000_000_000) * wallDepthMm;
+  const cavityVolumeLiters = roundTo(cavityVolumeM3 * 1000, 2);
+
   if (isBlocked) {
     return {
       openingAreaM2: roundTo(openingAreaM2, 4),
@@ -651,6 +702,9 @@ export function calculateFlammotectPenetration(
       fillRatioPercent: roundTo(fillRatioPercent, 2),
       isBlocked: true,
       validationError,
+      isRoundSleeve,
+      cavityVolumeLiters: 0,
+      cavityVolumeM3: 0,
       boardLayers: 2,
       boardAreaM2: 0,
       looseWoolMassKg: 0,
@@ -663,19 +717,47 @@ export function calculateFlammotectPenetration(
     };
   }
 
-  // Расчет основных материалов на 1 м² проема:
-  // 1. Минплита: 2.0 м² на 1 м² (2 слоя по 60 мм) * раскрой
-  const boardAreaM2 = openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.MINERAL_BOARD_M2_PER_M2 * cuttingLossFactor;
+  // Расчет материалов:
+  let boardAreaM2 = 0;
+  let boardLayers = 2;
+  let looseWoolMassKg = 0;
+  let fillerMassKg = 0;
 
-  // 2. Рассыпная минвата: 1.52 кг на 1 м² * потери
-  const looseWoolMassKg = openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.LOOSE_WOOL_KG_M2 * woolLossFactor;
+  if (isRoundSleeve) {
+    // В круглую трубную гильзу жесткие плиты не монтируются — полость набивается базальтовой ватой на всю глубину стены
+    boardAreaM2 = 0;
+    boardLayers = 0;
+    // Плотная набивка базальтовой ватой 150 кг/м³ с запасом на уплотнение 25% (или 10% без запаса)
+    const compactionFactor = includeCuttingLosses ? 1.25 : 1.10;
+    looseWoolMassKg = roundTo(cavityVolumeM3 * 150 * compactionFactor, 2);
+    // Шпаклевка FLAMMOTECT-A filler для торцевых пробок глубиной 25 мм с двух сторон или базовый расход
+    const plugVolumeM3 = (cavityAreaMm2 / 1_000_000) * 0.025 * 2;
+    fillerMassKg = roundTo(
+      Math.max(
+        openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.FILLER_KG_M2 * coatingLossFactor,
+        plugVolumeM3 * 1400 * coatingLossFactor
+      ),
+      2
+    );
+  } else {
+    // Прямоугольные проемы / короба: 2 слоя жестких плит 60 мм (EI 120) + вата для заделки швов
+    boardAreaM2 = roundTo(
+      openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.MINERAL_BOARD_M2_PER_M2 * cuttingLossFactor,
+      3
+    );
+    looseWoolMassKg = roundTo(
+      openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.LOOSE_WOOL_KG_M2 * woolLossFactor,
+      2
+    );
+    fillerMassKg = roundTo(
+      openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.FILLER_KG_M2 * coatingLossFactor,
+      2
+    );
+  }
 
-  // 3. FLAMMOTECT-A coating: 6.48 кг на 1 м² * потери при нанесении
+  // FLAMMOTECT-A coating: 6.48 кг на 1 м² * потери при нанесении
   const coatingMassKg = openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.COATING_KG_M2 * coatingLossFactor;
   const coatingBucketsCount = Math.ceil(coatingMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
-
-  // 4. FLAMMOTECT-A filler: 5.00 кг на 1 м² * потери
-  const fillerMassKg = openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.FILLER_KG_M2 * coatingLossFactor;
   const fillerBucketsCount = Math.ceil(fillerMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
 
   // Количество замеров толщины (п. 5.1): 2 замера на каждый 1 м² проходки
@@ -688,12 +770,15 @@ export function calculateFlammotectPenetration(
     fillRatioPercent: roundTo(fillRatioPercent, 2),
     isBlocked: false,
     validationError,
-    boardLayers: 2,
-    boardAreaM2: roundTo(boardAreaM2, 3),
-    looseWoolMassKg: roundTo(looseWoolMassKg, 2),
+    isRoundSleeve,
+    cavityVolumeLiters,
+    cavityVolumeM3: roundTo(cavityVolumeM3, 5),
+    boardLayers,
+    boardAreaM2,
+    looseWoolMassKg,
     coatingMassKg: roundTo(coatingMassKg, 2),
     coatingBucketsCount,
-    fillerMassKg: roundTo(fillerMassKg, 2),
+    fillerMassKg,
     fillerBucketsCount,
     dgCrBsMeters: roundTo(dgCrBsMeters, 2),
     measurementsCount,
