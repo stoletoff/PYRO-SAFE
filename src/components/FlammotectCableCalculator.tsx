@@ -140,9 +140,7 @@ export function FlammotectCableCalculator({
         : `Ширина лотка b: ${formValues.dimensionMm} мм`;
 
     const countLine =
-      formValues.installationType === "single"
-        ? `Количество кабелей (N): ${formValues.cableCount} шт.\n`
-        : isBundle && (formValues.cableCount || 1) > 1
+      isBundle && (formValues.cableCount || 1) > 1
         ? `Количество параллельных пучков: ${formValues.cableCount} шт.\n`
         : isTray
         ? `Количество полок короба: ${formValues.shelvesCount} шт.\n`
@@ -197,7 +195,10 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
         installationTypeName: currentTypeConfig.title,
         lengthM: Number(formValues.lengthM),
         dimensionMm: effectiveDia,
-        cableCount: Number(formValues.cableCount) || 1,
+        cableCount:
+          formValues.installationType === "single"
+            ? 1
+            : Number(formValues.cableCount) || 1,
         shelvesCount: Number(formValues.shelvesCount) || 1,
         dryFilmThicknessMm: Number(formValues.dryFilmThicknessMm),
         applicationMethodName:
@@ -812,31 +813,6 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                     )}
                   </div>
                 </div>
-
-                {/* Single cable count */}
-                {formValues.installationType === "single" && (
-                  <div className="p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-xs font-medium text-slate-300">
-                        Количество параллельных кабелей (N)
-                      </label>
-                      <span className="text-[11px] text-slate-500">Штук</span>
-                    </div>
-                    <Controller
-                      control={control}
-                      name="cableCount"
-                      render={({ field }) => (
-                        <input
-                          type="number"
-                          min="1"
-                          value={field.value ?? 1}
-                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors font-mono"
-                        />
-                      )}
-                    />
-                  </div>
-                )}
 
                 {/* Multi-shelf tray option (Section 3.2.1) */}
                 {isTray && (

@@ -18,7 +18,7 @@ export const INSTALLATION_TYPES: InstallationTypeConfig[] = [
     id: "single",
     title: "Одиночный кабель",
     subtitle: "Круглый наружный кабель",
-    formula: "S = L × π × d × N",
+    formula: "S = L × π × d",
     dimensionLabel: "Наружный диаметр кабеля (d), мм",
     dimensionHelp: "Диаметр по внешней оболочке кабеля",
     defaultDimension: 25,

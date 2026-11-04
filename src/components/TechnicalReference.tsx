@@ -283,7 +283,7 @@ export function TechnicalReference() {
                     <strong className="text-slate-200 font-mono">п. 3.2.1</strong> — лоток/короб с глухим дном: S = L × b × 1,5 × N_полок (для сетчатого: × 2 сторон).
                   </li>
                   <li>
-                    <strong className="text-slate-200 font-mono">п. 3.2.2</strong> — одиночный кабель: S = L × π × d × N.
+                    <strong className="text-slate-200 font-mono">п. 3.2.2</strong> — одиночный кабель: S = L × π × d.
                   </li>
                   <li>
                     <strong className="text-slate-200 font-mono">п. 3.2.3</strong> — кабели в пучке: S = L × π × D × 1,5 (коэф. развитой поверхности пучка 1,5).

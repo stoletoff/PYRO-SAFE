@@ -184,9 +184,9 @@ export function calculateFlammotectCableLine(input: FlammotectCableInput): Flamm
 
   switch (installationType) {
     case "single": {
-      // S = L * π * d * N (п. 3.2.2)
-      areaM2 = lengthM * 3.1416 * dimensionM * count;
-      formulaExplanation = `S = L × π × d × N = ${lengthM} м × 3.1416 × ${dimensionM.toFixed(4)} м × ${count} шт.`;
+      // S = L * π * d (п. 3.2.2)
+      areaM2 = lengthM * 3.1416 * dimensionM;
+      formulaExplanation = `S = L × π × d = ${lengthM} м × 3.1416 × ${dimensionM.toFixed(4)} м = ${roundTo(areaM2, 3)} м²`;
       break;
     }
     case "bundle": {
