@@ -1,55 +1,12 @@
 /**
- * Бизнес-логика инженерного калькулятора огнезащитных материалов «svt Brandschutz» / PYRO-SAFE.
- * Чистые математические функции, независимые от интерфейса пользователя.
+ * Бизнес-логика инженерного калькулятора огнезащитных материалов «PYRO-SAFE» (svt Products GmbH / ТОВ «ІПВК «СПЕЦЗАХИСТ»).
+ * Регламенты 2022 года:
+ * 1. Огнезащита кабелей: PYRO-SAFE FLAMMOTECT-A (ДСТУ EN 60332-3-21)
+ * 2. Огнестойкие проходки: PYRO-SAFE FLAMMOTECT Double Layer (EI 120, EN 1366-3)
  */
 
 // ==========================================
-// КОНСТАНТЫ И НОРМАТИВНЫЕ ПОКАЗАТЕЛИ
-// ==========================================
-
-export const CONSTANTS = {
-  // FLAMMOPLAST KS 1: норма расхода при толщине сухого слоя 0.72 мм (технологические потери включены)
-  KS1_CABLE_COVERAGE_RATE_KG_M2: 1.73,
-  // Емкость стандартного ведра FLAMMOPLAST KS 1 (кг)
-  KS1_BUCKET_WEIGHT_KG: 12.5,
-  // Защитный лак PYRO-SAFE SP-2: норма расхода при влажности > 85% (кг/м²)
-  SP2_COVERAGE_RATE_KG_M2: 0.175,
-  // Максимально допустимый процент заполнения кабельной проходки по стандарту UNIVERSALSCHOTT (60%)
-  MAX_PENETRATION_FILL_RATIO_PERCENT: 60.0,
-} as const;
-
-// Коэффициенты технологических потерь для KS 1 при кабельных проходках
-export const APPLICATION_LOSS_FACTORS = {
-  brush: 1.10, // Кисть / валик: +10%
-  sprayer: 1.30, // Распылитель: +30%
-} as const;
-
-export type ApplicationMethod = keyof typeof APPLICATION_LOSS_FACTORS;
-
-// Базовые нормы расхода материалов на 1 м² проема кабельной проходки UNIVERSALSCHOTT
-export const PENETRATION_EI_NORMS = {
-  EI60: {
-    label: "EI 60 (60 минут)",
-    boardLayers: 1,
-    boardAreaPerM2: 1.0, // м² минплиты на 1 м² проема
-    ks1BaseKgPerM2: 1.65, // кг KS 1 на 1 м² проема (без учета способа нанесения)
-    ks3KgPerM2: 3.5, // кг мастики KS 3 на 1 м² проема
-    mineralWoolKgPerM2: 1.0, // кг рассыпной минваты на 1 м² проема
-  },
-  EI180: {
-    label: "EI 180 (180 минут)",
-    boardLayers: 2,
-    boardAreaPerM2: 2.0, // м² минплиты на 1 м² проема (2 слоя)
-    ks1BaseKgPerM2: 2.5, // кг KS 1 на 1 м² проема (без учета способа нанесения)
-    ks3KgPerM2: 5.0, // кг мастики KS 3 на 1 м² проема
-    mineralWoolKgPerM2: 1.5, // кг рассыпной минваты на 1 м² проема
-  },
-} as const;
-
-export type FireResistanceRating = keyof typeof PENETRATION_EI_NORMS;
-
-// ==========================================
-// МОДУЛЬ 1: ОГНЕЗАЩИТА КАБЕЛЬНЫХ ЛИНИЙ (FLAMMOPLAST KS 1)
+// ОБЩИЕ ТИПЫ И ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ==========================================
 
 export type CableInstallationType =
@@ -58,310 +15,15 @@ export type CableInstallationType =
   | "tray_solid" // Лоток с глухим дном
   | "tray_mesh"; // Сетчатый лоток
 
-export interface CableLineInput {
-  installationType: CableInstallationType;
-  /** Длина кабельной трассы (L) в метрах */
-  lengthM: number;
-  /** Внешний диаметр кабеля или пучка (d), либо ширина лотка (b) в миллиметрах */
-  dimensionMm: number;
-  /** Количество кабелей (для одиночной прокладки; для остальных типов игнорируется или = 1) */
-  cableCount?: number;
-  /** Признак влажности в помещении более 85% */
-  humidityGt85: boolean;
-}
-
-export interface CableLineResult {
-  /** Расчетная площадь защищаемой поверхности (м²) */
-  areaM2: number;
-  /** Масса огнезащитного покрытия FLAMMOPLAST KS 1 (кг) */
-  ks1MassKg: number;
-  /** Количество целых вёдер FLAMMOPLAST KS 1 (по 12.5 кг) */
-  ks1BucketsCount: number;
-  /** Масса защитного лака PYRO-SAFE SP-2 (кг) */
-  sp2MassKg: number;
-  /** Текстовая расшифровка формулы для инженерного отчета */
-  formulaExplanation: string;
-}
-
-/**
- * Расчет расхода огнезащитных материалов для кабельных линий
- */
-export function calculateCableLine(input: CableLineInput): CableLineResult {
-  const { installationType, lengthM, dimensionMm, cableCount = 1, humidityGt85 } = input;
-
-  if (lengthM <= 0 || dimensionMm <= 0) {
-    return {
-      areaM2: 0,
-      ks1MassKg: 0,
-      ks1BucketsCount: 0,
-      sp2MassKg: 0,
-      formulaExplanation: "Некорректные входные данные (длина или диаметр <= 0).",
-    };
-  }
-
-  // Перевод размера из мм в метры
-  const dimensionM = dimensionMm / 1000;
-  const count = Math.max(1, cableCount);
-
-  let areaM2 = 0;
-  let formulaExplanation = "";
-
-  switch (installationType) {
-    case "single": {
-      // S = L * π * d * N
-      areaM2 = lengthM * Math.PI * dimensionM * count;
-      formulaExplanation = `S = L × π × d × N = ${lengthM} м × 3.1416 × ${dimensionM.toFixed(4)} м × ${count} шт.`;
-      break;
-    }
-    case "bundle": {
-      // S = L * π * d * 1.5
-      areaM2 = lengthM * Math.PI * dimensionM * 1.5;
-      formulaExplanation = `S = L × π × d × 1.5 = ${lengthM} м × 3.1416 × ${dimensionM.toFixed(4)} м × 1.5 (коэф. пучка)`;
-      break;
-    }
-    case "tray_solid": {
-      // S = L * b * 1.5
-      areaM2 = lengthM * dimensionM * 1.5;
-      formulaExplanation = `S = L × b × 1.5 = ${lengthM} м × ${dimensionM.toFixed(3)} м × 1.5 (периметр лотка с глухим дном)`;
-      break;
-    }
-    case "tray_mesh": {
-      // S = L * b * 1.5 * 2
-      areaM2 = lengthM * dimensionM * 1.5 * 2;
-      formulaExplanation = `S = L × b × 1.5 × 2 = ${lengthM} м × ${dimensionM.toFixed(3)} м × 1.5 × 2 (двусторонняя обработка сетчатого лотка)`;
-      break;
-    }
-  }
-
-  // Расход KS 1: 1.73 кг/м²
-  const ks1MassKg = areaM2 * CONSTANTS.KS1_CABLE_COVERAGE_RATE_KG_M2;
-
-  // Округление количества ведер до целого в большую сторону
-  const ks1BucketsCount = Math.ceil(ks1MassKg / CONSTANTS.KS1_BUCKET_WEIGHT_KG);
-
-  // Расход SP-2: 0.175 кг/м² только при влажности > 85%
-  const sp2MassKg = humidityGt85 ? areaM2 * CONSTANTS.SP2_COVERAGE_RATE_KG_M2 : 0;
-
-  return {
-    areaM2: roundTo(areaM2, 3),
-    ks1MassKg: roundTo(ks1MassKg, 2),
-    ks1BucketsCount,
-    sp2MassKg: roundTo(sp2MassKg, 2),
-    formulaExplanation,
-  };
-}
-
-// ==========================================
-// МОДУЛЬ 2: КАБЕЛЬНЫЕ ПРОХОДКИ (UNIVERSALSCHOTT)
-// ==========================================
-
 export type PenetrationShape = "rect" | "round";
 
-export interface CableItem {
-  id: string;
-  name?: string;
-  /** Внешний диаметр кабеля (мм) */
-  diameterMm: number;
-  /** Количество кабелей данного типа */
-  count: number;
-}
-
-export interface PenetrationInput {
-  shape: PenetrationShape;
-  /** Высота проема (мм) для прямоугольного */
-  heightMm?: number;
-  /** Ширина проема (мм) для прямоугольного */
-  widthMm?: number;
-  /** Диаметр проема (мм) для круглого */
-  diameterMm?: number;
-  /** Список проходящих кабелей */
-  cables: CableItem[];
-  /** Предел огнестойкости (EI 60 или EI 180) */
-  fireResistance: FireResistanceRating;
-  /** Способ нанесения KS 1 */
-  applicationMethod: ApplicationMethod;
-  /** Помещение с влажностью > 85% */
-  humidityGt85: boolean;
-  /** Толщина стены/перекрытия (глубина гильзы) в мм */
-  wallThicknessMm?: number;
-}
-
-export interface PenetrationResult {
-  /** Площадь проема (м²) */
-  openingAreaM2: number;
-  /** Площадь проема (мм²) */
-  openingAreaMm2: number;
-  /** Суммарная площадь сечения всех кабелей (мм²) */
-  cablesAreaMm2: number;
-  /** Фактический процент заполнения проема кабелями (%) */
-  fillRatioPercent: number;
-  /** Заблокирован ли расчет из-за превышения 60% */
-  isBlocked: boolean;
-  /** Текст ошибки валидации (если есть) */
-  validationError?: string;
-  /** Является ли гильзой круглого сечения (объемная набивка ватой) */
-  isRoundSleeve?: boolean;
-  /** Объем свободной полости гильзы в литрах */
-  cavityVolumeLiters?: number;
-  /** Объем свободной полости гильзы в м³ */
-  cavityVolumeM3?: number;
-  /** Количество слоев минераловатных плит (0 для круглых гильз) */
-  boardLayers: number;
-  /** Площадь минераловатной плиты (м²) (0 для круглых гильз) */
-  boardAreaM2: number;
-  /** Масса базальтовой минваты для плотной заделки (кг) */
-  mineralWoolMassKg: number;
-  /** Масса огнезащитного покрытия FLAMMOPLAST KS 1 (кг) */
-  ks1MassKg: number;
-  /** Количество ведер KS 1 по 12.5 кг */
-  ks1BucketsCount: number;
-  /** Масса абляционной мастики PYRO-SAFE KS 3 (кг) */
-  ks3MassKg: number;
-  /** Масса финишного защитного лака PYRO-SAFE SP-2 (кг) */
-  sp2MassKg: number;
-  /** Коэффициент технологических потерь KS 1 */
-  applicationLossFactor: number;
-}
-
-/**
- * Расчет расхода материалов для кабельной проходки UNIVERSALSCHOTT с критической проверкой 60%
- */
-export function calculatePenetration(input: PenetrationInput): PenetrationResult {
-  const {
-    shape,
-    heightMm = 0,
-    widthMm = 0,
-    diameterMm = 0,
-    cables,
-    fireResistance,
-    applicationMethod,
-    humidityGt85,
-    wallThicknessMm = 200,
-  } = input;
-
-  // 1. Расчет площади проема
-  let openingAreaMm2 = 0;
-  if (shape === "rect") {
-    openingAreaMm2 = Math.max(0, heightMm) * Math.max(0, widthMm);
-  } else {
-    const radius = Math.max(0, diameterMm) / 2;
-    openingAreaMm2 = Math.PI * Math.pow(radius, 2);
-  }
-  const openingAreaM2 = openingAreaMm2 / 1_000_000;
-
-  // 2. Расчет суммарного сечения кабелей
-  let cablesAreaMm2 = 0;
-  for (const cable of cables) {
-    if (cable.diameterMm > 0 && cable.count > 0) {
-      const cableRadius = cable.diameterMm / 2;
-      const singleCableAreaMm2 = Math.PI * Math.pow(cableRadius, 2);
-      cablesAreaMm2 += singleCableAreaMm2 * cable.count;
-    }
-  }
-
-  // 3. Расчет коэффициента заполнения
-  const fillRatioPercent =
-    openingAreaMm2 > 0 ? (cablesAreaMm2 / openingAreaMm2) * 100 : 0;
-
-  // 4. Критическая валидация: не более 60% от площади перереза проходки
-  const isBlocked =
-    openingAreaMm2 <= 0 ||
-    fillRatioPercent > CONSTANTS.MAX_PENETRATION_FILL_RATIO_PERCENT;
-
-  let validationError: string | undefined;
-  if (openingAreaMm2 <= 0) {
-    validationError = "Укажите корректные размеры проема проходки.";
-  } else if (fillRatioPercent > CONSTANTS.MAX_PENETRATION_FILL_RATIO_PERCENT) {
-    validationError = `Загальний дозволений переріз кабелів не може бути більше 60% від площі перерізу проходки! Фактичне заповнення: ${roundTo(fillRatioPercent, 1)}%. Розрахунок заблоковано.`;
-  }
-
-  // Базовые нормы для выбранного предела огнестойкости
-  const norms = PENETRATION_EI_NORMS[fireResistance] || PENETRATION_EI_NORMS.EI60;
-  const lossFactor = APPLICATION_LOSS_FACTORS[applicationMethod] || 1.10;
-
-  const isRoundSleeve = shape === "round";
-  const cavityAreaMm2 = Math.max(0, openingAreaMm2 - cablesAreaMm2);
-  const wallDepthMm = Math.max(100, wallThicknessMm || 200);
-  const cavityVolumeM3 = (cavityAreaMm2 / 1_000_000_000) * wallDepthMm;
-  const cavityVolumeLiters = roundTo(cavityVolumeM3 * 1000, 2);
-
-  if (isBlocked) {
-    return {
-      openingAreaM2: roundTo(openingAreaM2, 4),
-      openingAreaMm2: roundTo(openingAreaMm2, 1),
-      cablesAreaMm2: roundTo(cablesAreaMm2, 1),
-      fillRatioPercent: roundTo(fillRatioPercent, 2),
-      isBlocked: true,
-      validationError,
-      isRoundSleeve,
-      cavityVolumeLiters: 0,
-      cavityVolumeM3: 0,
-      boardLayers: norms.boardLayers,
-      boardAreaM2: 0,
-      mineralWoolMassKg: 0,
-      ks1MassKg: 0,
-      ks1BucketsCount: 0,
-      ks3MassKg: 0,
-      sp2MassKg: 0,
-      applicationLossFactor: lossFactor,
-    };
-  }
-
-  // Расчет материалов:
-  let boardAreaM2 = 0;
-  let boardLayers: number = norms.boardLayers;
-  let mineralWoolMassKg = 0;
-  let ks3MassKg = 0;
-
-  if (isRoundSleeve) {
-    // В круглую закладную гильзу плиты не ставятся — полость трубы набивается базальтовой ватой на всю толщину стены
-    boardAreaM2 = 0;
-    boardLayers = 0;
-    // Плотная набивка базальтовой ватой 150 кг/м³ с технологическим запасом на уплотнение 20%
-    mineralWoolMassKg = roundTo(cavityVolumeM3 * 150 * 1.20, 2);
-    // Торцы герметизируются мастикой KS 3 (2 торца по 25 мм) или минимум по площади
-    const plugVolumeM3 = (cavityAreaMm2 / 1_000_000) * 0.025 * 2;
-    ks3MassKg = roundTo(
-      Math.max(openingAreaM2 * norms.ks3KgPerM2, plugVolumeM3 * 1400 * 1.10),
-      2
-    );
-  } else {
-    // Прямоугольные проемы: жесткие плиты 150 кг/м³ + рассыпная вата для швов
-    boardAreaM2 = roundTo(openingAreaM2 * norms.boardAreaPerM2, 3);
-    mineralWoolMassKg = roundTo(openingAreaM2 * norms.mineralWoolKgPerM2, 2);
-    ks3MassKg = roundTo(openingAreaM2 * norms.ks3KgPerM2, 2);
-  }
-
-  // FLAMMOPLAST KS 1: базовая норма * S_проема * коэфф. потерь (кисть +10%, распылитель +30%)
-  const ks1MassKg = openingAreaM2 * norms.ks1BaseKgPerM2 * lossFactor;
-  const ks1BucketsCount = Math.ceil(ks1MassKg / CONSTANTS.KS1_BUCKET_WEIGHT_KG);
-
-  // Защитный лак SP-2: 0.175 кг/м² при влажности > 85%
-  const sp2MassKg = humidityGt85 ? openingAreaM2 * CONSTANTS.SP2_COVERAGE_RATE_KG_M2 : 0;
-
-  return {
-    openingAreaM2: roundTo(openingAreaM2, 4),
-    openingAreaMm2: roundTo(openingAreaMm2, 1),
-    cablesAreaMm2: roundTo(cablesAreaMm2, 1),
-    fillRatioPercent: roundTo(fillRatioPercent, 2),
-    isBlocked: false,
-    validationError: undefined,
-    isRoundSleeve,
-    cavityVolumeLiters,
-    cavityVolumeM3: roundTo(cavityVolumeM3, 5),
-    boardLayers,
-    boardAreaM2,
-    mineralWoolMassKg,
-    ks1MassKg: roundTo(ks1MassKg, 2),
-    ks1BucketsCount,
-    ks3MassKg,
-    sp2MassKg: roundTo(sp2MassKg, 2),
-    applicationLossFactor: lossFactor,
-  };
+export function roundTo(num: number, decimals: number): number {
+  const factor = Math.pow(10, decimals);
+  return Math.round((num + Number.EPSILON) * factor) / factor;
 }
 
 // ==========================================
-// МОДУЛЬ 3: ОГНЕЗАЩИТА КАБЕЛЬНЫХ ЛИНИЙ (PYRO-SAFE FLAMMOTECT-A)
+// МОДУЛЬ 1: ОГНЕЗАЩИТА КАБЕЛЬНЫХ ЛИНИЙ (PYRO-SAFE FLAMMOTECT-A)
 // ==========================================
 
 export const FLAMMOTECT_CONSTANTS = {
@@ -489,7 +151,6 @@ export function calculateFlammotectCableLine(input: FlammotectCableInput): Flamm
   const wetFilmThicknessMm = dryFilmThicknessMm * FLAMMOTECT_CONSTANTS.WET_TO_DRY_RATIO;
 
   // Базовая норма расхода (кг/м²):
-  // Либо пользовательская, либо через плотность (1.4 кг/л) и толщину мокрого слоя
   const baseRateKgM2 =
     customRateKgM2 && customRateKgM2 > 0
       ? customRateKgM2
@@ -503,8 +164,7 @@ export function calculateFlammotectCableLine(input: FlammotectCableInput): Flamm
   const flammotectMassKg = areaM2 * effectiveRateKgM2;
   const flammotectBucketsCount = Math.ceil(flammotectMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
 
-  // Рекомендованное количество точек замера по регламенту (п. 5.1):
-  // Каждые 15-20 м, но не менее 10 точек
+  // Рекомендованное количество точек замера по регламенту (п. 5.1): каждые 15-20 м, но не менее 10 точек
   const recommendedMeasurementsCount = Math.max(10, Math.ceil(lengthM / 20));
 
   return {
@@ -520,13 +180,13 @@ export function calculateFlammotectCableLine(input: FlammotectCableInput): Flamm
 }
 
 // ==========================================
-// МОДУЛЬ 4: КАБЕЛЬНЫЕ ПРОХОДКИ DOUBLE LAYER (PYRO-SAFE FLAMMOTECT-A)
+// МОДУЛЬ 2: КАБЕЛЬНЫЕ ПРОХОДКИ И ЗАКЛАДНЫЕ ГИЛЬЗЫ DOUBLE LAYER (EI 120)
 // ==========================================
 
 export const FLAMMOTECT_PENETRATION_CONSTANTS = {
-  /** Норма расхода покрытия FLAMMOTECT-A coating на 1 м² проходки (кг) без потерь */
+  /** Норма расхода покрытия FLAMMOTECT-A coating на 1 м² проходки (кг) без потерь (Таблица 10 регламента) */
   COATING_KG_M2: 6.48,
-  /** Норма расхода шпаклевки FLAMMOTECT-A filler на 1 м² проходки (кг) без потерь */
+  /** Норма расхода шпаклевки FLAMMOTECT-A filler на 1 м² проходки (кг) без потерь (Таблица 10 регламента) */
   FILLER_KG_M2: 5.00,
   /** Площадь минплиты на 1 м² проходки (2 слоя плиты по 60 мм = 2.0 м²) */
   MINERAL_BOARD_M2_PER_M2: 2.0,
@@ -537,7 +197,7 @@ export const FLAMMOTECT_PENETRATION_CONSTANTS = {
   /** Максимальные габариты проема: ширина/высота не более 2000 мм (п. Таблица 2) */
   MAX_WIDTH_MM: 2000,
   MAX_HEIGHT_MM: 2000,
-  /** Технологические потери на минплиту и вату при подгонке/раскрое (до 30%) */
+  /** Технологические потери на минплиту и вату при подгонке/раскрое (+30%) */
   BOARD_CUTTING_LOSS_FACTOR: 1.30,
   WOOL_INSTALL_LOSS_FACTOR: 1.30,
 } as const;
@@ -576,17 +236,16 @@ export interface FlammotectPenetrationResult {
   fillRatioPercent: number;
   isBlocked: boolean;
   validationError?: string;
-  /** Является ли гильзой круглого сечения (объемная набивка ватой) */
   isRoundSleeve: boolean;
-  /** Объем свободной полости гильзы в литрах */
+  /** Справочный объем свободной полости гильзы в литрах */
   cavityVolumeLiters?: number;
-  /** Объем свободной полости гильзы в м³ */
+  /** Справочный объем свободной полости гильзы в м³ */
   cavityVolumeM3?: number;
-  /** Количество слоев минераловатных плит (2 для прямоугольных проемов, 0 для круглых гильз) */
+  /** Количество слоев минераловатных плит (2 слоя по 60 мм) */
   boardLayers: number;
-  /** Площадь минплиты (м²) с учетом раскроя (0 для круглых гильз) */
+  /** Площадь минплиты (м²) по нормативной таблице Регламента */
   boardAreaM2: number;
-  /** Масса базальтовой минваты для плотной заделки (кг) */
+  /** Масса базальтовой минваты (кг) по нормативной таблице Регламента */
   looseWoolMassKg: number;
   /** Масса FLAMMOTECT-A coating (кг) */
   coatingMassKg: number;
@@ -603,8 +262,9 @@ export interface FlammotectPenetrationResult {
 }
 
 /**
- * Расчет расхода материалов на двухслойную проходку «PYRO-SAFE Flammotect – Double layer» (EI 120)
- * Регламент ТОВ «ІПВК «СПЕЦЗАХИСТ» / svt Products GmbH (2022)
+ * Расчет расхода материалов на кабельную проходку / закладную гильзу
+ * методом пропорции по Таблице 10 Регламента «PYRO-SAFE Flammotect – Double layer» (EI 120)
+ * S_проема (м²) × Удельный норматив на 1 м² × Коэффициент технологических потерь
  */
 export function calculateFlammotectPenetration(
   input: FlammotectPenetrationInput
@@ -621,7 +281,7 @@ export function calculateFlammotectPenetration(
     wallThicknessMm = 200,
   } = input;
 
-  // 1. Площадь проема
+  // 1. Площадь сечения проема (просвета гильзы)
   let openingAreaMm2 = 0;
   if (shape === "rect") {
     openingAreaMm2 = heightMm * widthMm;
@@ -643,22 +303,19 @@ export function calculateFlammotectPenetration(
 
       // Для пластиковых горючих труб рассчитываем обмотку DG-CR BS по Табл. 13-14
       if (item.type === "pipe_plastic") {
-        // Определение слоев обертывания по диаметру:
         let layers = 1;
         if (item.diameterMm > 110) layers = 4;
         else if (item.diameterMm > 80) layers = 3;
         else if (item.diameterMm > 50) layers = 2;
 
-        // Для стен: 2 обертки (с обеих сторон); для перекрытия: 1 обертка
         const wrapsCount = isFloorPenetration ? 1 : 2;
-        // Длина обертки на одну трубу = π * d * layers
         const wrapPerPipeM = (Math.PI * (item.diameterMm / 1000) * layers + 0.05) * wrapsCount;
         dgCrBsMeters += wrapPerPipeM * item.count;
       }
     }
   }
 
-  // 3. Коэффициент заполнения
+  // 3. Коэффициент заполнения проходки (не более 60%)
   const fillRatioPercent =
     openingAreaMm2 > 0 ? (penetrantsAreaMm2 / openingAreaMm2) * 100 : 0;
 
@@ -672,7 +329,7 @@ export function calculateFlammotectPenetration(
 
   let validationError: string | undefined;
   if (openingAreaMm2 <= 0) {
-    validationError = "Укажите корректные размеры проема проходки.";
+    validationError = "Укажите корректные размеры проема проходки или гильзы.";
   } else if (exceedsMaxFill) {
     validationError = `Загальний дозволений переріз комунікацій не може перевищувати 60% від площі проходки! Фактичне заповнення: ${roundTo(fillRatioPercent, 1)}%. Розрахунок заблоковано регламентом.`;
   } else if (exceedsMaxDimension) {
@@ -717,50 +374,36 @@ export function calculateFlammotectPenetration(
     };
   }
 
-  // Расчет материалов:
-  let boardAreaM2 = 0;
-  let boardLayers = 2;
-  let looseWoolMassKg = 0;
-  let fillerMassKg = 0;
+  // Расчет всех материалов методом пропорции по Таблице 10 Регламента:
+  // S_проема (м²) × удельная норма на 1 м² × коэффициент потерь
 
-  if (isRoundSleeve) {
-    // В круглую трубную гильзу жесткие плиты не монтируются — полость набивается базальтовой ватой на всю глубину стены
-    boardAreaM2 = 0;
-    boardLayers = 0;
-    // Плотная набивка базальтовой ватой 150 кг/м³ с запасом на уплотнение 25% (или 10% без запаса)
-    const compactionFactor = includeCuttingLosses ? 1.25 : 1.10;
-    looseWoolMassKg = roundTo(cavityVolumeM3 * 150 * compactionFactor, 2);
-    // Шпаклевка FLAMMOTECT-A filler для торцевых пробок глубиной 25 мм с двух сторон или базовый расход
-    const plugVolumeM3 = (cavityAreaMm2 / 1_000_000) * 0.025 * 2;
-    fillerMassKg = roundTo(
-      Math.max(
-        openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.FILLER_KG_M2 * coatingLossFactor,
-        plugVolumeM3 * 1400 * coatingLossFactor
-      ),
-      2
-    );
-  } else {
-    // Прямоугольные проемы / короба: 2 слоя жестких плит 60 мм (EI 120) + вата для заделки швов
-    boardAreaM2 = roundTo(
-      openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.MINERAL_BOARD_M2_PER_M2 * cuttingLossFactor,
-      3
-    );
-    looseWoolMassKg = roundTo(
-      openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.LOOSE_WOOL_KG_M2 * woolLossFactor,
-      2
-    );
-    fillerMassKg = roundTo(
-      openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.FILLER_KG_M2 * coatingLossFactor,
-      2
-    );
-  }
+  // 1. Минплита 150 кг/м³ (толщина 60 мм, 2 слоя = 2.0 м² на 1 м²):
+  const boardAreaM2 = roundTo(
+    openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.MINERAL_BOARD_M2_PER_M2 * cuttingLossFactor,
+    4
+  );
 
-  // FLAMMOTECT-A coating: 6.48 кг на 1 м² * потери при нанесении
-  const coatingMassKg = openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.COATING_KG_M2 * coatingLossFactor;
+  // 2. Рассыпная базальтовая минвата (1.52 кг на 1 м²):
+  const looseWoolMassKg = roundTo(
+    openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.LOOSE_WOOL_KG_M2 * woolLossFactor,
+    4
+  );
+
+  // 3. FLAMMOTECT-A coating (6.48 кг на 1 м²):
+  const coatingMassKg = roundTo(
+    openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.COATING_KG_M2 * coatingLossFactor,
+    3
+  );
   const coatingBucketsCount = Math.ceil(coatingMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
+
+  // 4. FLAMMOTECT-A filler (5.00 кг на 1 м²):
+  const fillerMassKg = roundTo(
+    openingAreaM2 * FLAMMOTECT_PENETRATION_CONSTANTS.FILLER_KG_M2 * coatingLossFactor,
+    3
+  );
   const fillerBucketsCount = Math.ceil(fillerMassKg / FLAMMOTECT_CONSTANTS.BUCKET_WEIGHT_KG);
 
-  // Количество замеров толщины (п. 5.1): 2 замера на каждый 1 м² проходки
+  // Контрольные замеры толщины (п. 5.1): не менее 2 замеров
   const measurementsCount = Math.max(2, Math.ceil(openingAreaM2 * 2));
 
   return {
@@ -773,10 +416,10 @@ export function calculateFlammotectPenetration(
     isRoundSleeve,
     cavityVolumeLiters,
     cavityVolumeM3: roundTo(cavityVolumeM3, 5),
-    boardLayers,
+    boardLayers: 2,
     boardAreaM2,
     looseWoolMassKg,
-    coatingMassKg: roundTo(coatingMassKg, 2),
+    coatingMassKg,
     coatingBucketsCount,
     fillerMassKg,
     fillerBucketsCount,
@@ -786,16 +429,7 @@ export function calculateFlammotectPenetration(
 }
 
 // ==========================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ==========================================
-
-export function roundTo(num: number, decimals: number): number {
-  const factor = Math.pow(10, decimals);
-  return Math.round((num + Number.EPSILON) * factor) / factor;
-}
-
-// ==========================================
-// МОДУЛЬ 5: ЗАКЛАДНЫЕ ГИЛЬЗЫ И ЗАДАНИЕ СТРОИТЕЛЯМ
+// МОДУЛЬ 3: ЗАКЛАДНЫЕ ГИЛЬЗЫ И ЗАДАНИЕ СТРОИТЕЛЯМ
 // ==========================================
 
 export interface StandardRoundSleeve {
@@ -811,14 +445,11 @@ export const STANDARD_ROUND_SLEEVES: StandardRoundSleeve[] = [
   { diameterMm: 48, internalDiameterMm: 42, wallThicknessMm: 3.0, label: "Труба Ø48×3.0 (Ду 40)", du: 40, areaMm2: Math.PI * 21 * 21 },
   { diameterMm: 57, internalDiameterMm: 50, wallThicknessMm: 3.5, label: "Труба Ø57×3.5 (Ду 50)", du: 50, areaMm2: Math.PI * 25 * 25 },
   { diameterMm: 76, internalDiameterMm: 69, wallThicknessMm: 3.5, label: "Труба Ø76×3.5 (Ду 65)", du: 65, areaMm2: Math.PI * 34.5 * 34.5 },
-  { diameterMm: 89, internalDiameterMm: 81, wallThicknessMm: 4.0, label: "Труба Ø89×4.0 (Ду 80)", du: 80, areaMm2: Math.PI * 40.5 * 40.5 },
+  { diameterMm: 89, internalDiameterMm: 82, wallThicknessMm: 3.5, label: "Труба Ø89×3.5 (Ду 80)", du: 80, areaMm2: Math.PI * 41 * 41 },
   { diameterMm: 108, internalDiameterMm: 100, wallThicknessMm: 4.0, label: "Труба Ø108×4.0 (Ду 100)", du: 100, areaMm2: Math.PI * 50 * 50 },
-  { diameterMm: 133, internalDiameterMm: 124, wallThicknessMm: 4.5, label: "Труба Ø133×4.5 (Ду 125)", du: 125, areaMm2: Math.PI * 62 * 62 },
+  { diameterMm: 133, internalDiameterMm: 125, wallThicknessMm: 4.0, label: "Труба Ø133×4.0 (Ду 125)", du: 125, areaMm2: Math.PI * 62.5 * 62.5 },
   { diameterMm: 159, internalDiameterMm: 150, wallThicknessMm: 4.5, label: "Труба Ø159×4.5 (Ду 150)", du: 150, areaMm2: Math.PI * 75 * 75 },
   { diameterMm: 219, internalDiameterMm: 207, wallThicknessMm: 6.0, label: "Труба Ø219×6.0 (Ду 200)", du: 200, areaMm2: Math.PI * 103.5 * 103.5 },
-  { diameterMm: 273, internalDiameterMm: 259, wallThicknessMm: 7.0, label: "Труба Ø273×7.0 (Ду 250)", du: 250, areaMm2: Math.PI * 129.5 * 129.5 },
-  { diameterMm: 325, internalDiameterMm: 309, wallThicknessMm: 8.0, label: "Труба Ø325×8.0 (Ду 300)", du: 300, areaMm2: Math.PI * 154.5 * 154.5 },
-  { diameterMm: 426, internalDiameterMm: 410, wallThicknessMm: 8.0, label: "Труба Ø426×8.0 (Ду 400)", du: 400, areaMm2: Math.PI * 205 * 205 },
 ];
 
 export interface StandardRectSleeve {
@@ -829,103 +460,138 @@ export interface StandardRectSleeve {
 }
 
 export const STANDARD_RECT_SLEEVES: StandardRectSleeve[] = [
-  { widthMm: 100, heightMm: 100, label: "Короб 100 × 100 мм", areaMm2: 10000 },
-  { widthMm: 150, heightMm: 150, label: "Короб 150 × 150 мм", areaMm2: 22500 },
-  { widthMm: 200, heightMm: 100, label: "Короб 200 × 100 мм", areaMm2: 20000 },
-  { widthMm: 200, heightMm: 150, label: "Короб 200 × 150 мм", areaMm2: 30000 },
-  { widthMm: 200, heightMm: 200, label: "Короб 200 × 200 мм", areaMm2: 40000 },
-  { widthMm: 300, heightMm: 150, label: "Короб 300 × 150 мм", areaMm2: 45000 },
-  { widthMm: 300, heightMm: 200, label: "Короб 300 × 200 мм", areaMm2: 60000 },
-  { widthMm: 300, heightMm: 300, label: "Короб 300 × 300 мм", areaMm2: 90000 },
-  { widthMm: 400, heightMm: 200, label: "Короб 400 × 200 мм", areaMm2: 80000 },
-  { widthMm: 400, heightMm: 300, label: "Короб 400 × 300 мм", areaMm2: 120000 },
-  { widthMm: 500, heightMm: 200, label: "Короб 500 × 200 мм", areaMm2: 100000 },
-  { widthMm: 500, heightMm: 300, label: "Короб 500 × 300 мм", areaMm2: 150000 },
-  { widthMm: 600, heightMm: 200, label: "Короб 600 × 200 мм", areaMm2: 120000 },
-  { widthMm: 600, heightMm: 300, label: "Короб 600 × 300 мм", areaMm2: 180000 },
-  { widthMm: 600, heightMm: 400, label: "Короб 600 × 400 мм", areaMm2: 240000 },
+  { widthMm: 100, heightMm: 100, label: "Короб 100×100 мм", areaMm2: 10000 },
+  { widthMm: 150, heightMm: 100, label: "Короб 150×100 мм", areaMm2: 15000 },
+  { widthMm: 200, heightMm: 100, label: "Короб 200×100 мм", areaMm2: 20000 },
+  { widthMm: 200, heightMm: 200, label: "Короб 200×200 мм", areaMm2: 40000 },
+  { widthMm: 300, heightMm: 150, label: "Короб 300×150 мм", areaMm2: 45000 },
+  { widthMm: 300, heightMm: 200, label: "Короб 300×200 мм", areaMm2: 60000 },
+  { widthMm: 400, heightMm: 200, label: "Короб 400×200 мм", areaMm2: 80000 },
+  { widthMm: 500, heightMm: 200, label: "Короб 500×200 мм", areaMm2: 100000 },
+  { widthMm: 600, heightMm: 200, label: "Короб 600×200 мм", areaMm2: 120000 },
 ];
 
-/**
- * Расчет длины гильзы и параметров выпуска с учетом нормативов
- */
-export function calculateSleeveLength(wallThicknessMm: number, isFloor: boolean = false) {
-  const wall = Math.max(50, wallThicknessMm);
-  if (isFloor) {
-    // В перекрытиях: гильза должна выступать на 50 мм выше чистого пола (ПУЭ / СНиП) и 10-15 мм снизу
+export interface SleeveRecommendation {
+  shape: PenetrationShape;
+  recommendedDiameterMm?: number;
+  recommendedInternalDiameterMm?: number;
+  recommendedWidthMm?: number;
+  recommendedHeightMm?: number;
+  label: string;
+  recommendedLabel: string;
+  fillPercent: number;
+  actualFillPercent: number;
+  isAvailable: boolean;
+  minRequiredAreaMm2: number;
+  minAreaNeededMm2: number;
+}
+
+export function recommendSleeve(
+  cablesAreaMm2: number,
+  shape: PenetrationShape
+): SleeveRecommendation {
+  const minRequiredAreaMm2 = cablesAreaMm2 > 0 ? cablesAreaMm2 / 0.50 : 1000;
+
+  if (shape === "round") {
+    const candidate = STANDARD_ROUND_SLEEVES.find((s) => s.areaMm2 >= minRequiredAreaMm2);
+    if (candidate) {
+      const fill = (cablesAreaMm2 / candidate.areaMm2) * 100;
+      return {
+        shape: "round",
+        recommendedDiameterMm: candidate.internalDiameterMm,
+        recommendedInternalDiameterMm: candidate.internalDiameterMm,
+        label: candidate.label,
+        recommendedLabel: candidate.label,
+        fillPercent: roundTo(fill, 1),
+        actualFillPercent: roundTo(fill, 1),
+        isAvailable: true,
+        minRequiredAreaMm2: roundTo(minRequiredAreaMm2, 0),
+        minAreaNeededMm2: roundTo(minRequiredAreaMm2, 0),
+      };
+    }
+    const maxSleeve = STANDARD_ROUND_SLEEVES[STANDARD_ROUND_SLEEVES.length - 1];
+    const fill = (cablesAreaMm2 / maxSleeve.areaMm2) * 100;
     return {
-      totalLengthMm: wall + 50 + 15,
-      protrusionSide1Mm: 50, // Сверху над чистым полом
-      protrusionSide2Mm: 15, // Снизу из потолка
-      ruleText: "Выступ гильзы на 50 мм выше чистого пола (защита от воды по ПУЭ 2.1.58) и 15 мм снизу потолка",
+      shape: "round",
+      recommendedDiameterMm: maxSleeve.internalDiameterMm,
+      recommendedInternalDiameterMm: maxSleeve.internalDiameterMm,
+      label: `${maxSleeve.label} (Переполнение!)`,
+      recommendedLabel: `${maxSleeve.label} (Переполнение!)`,
+      fillPercent: roundTo(fill, 1),
+      actualFillPercent: roundTo(fill, 1),
+      isAvailable: false,
+      minRequiredAreaMm2: roundTo(minRequiredAreaMm2, 0),
+      minAreaNeededMm2: roundTo(minRequiredAreaMm2, 0),
     };
   } else {
-    // В стенах: гильза выступает на 15-20 мм с каждой стороны под финишную отделку
+    const candidate = STANDARD_RECT_SLEEVES.find((s) => s.areaMm2 >= minRequiredAreaMm2);
+    if (candidate) {
+      const fill = (cablesAreaMm2 / candidate.areaMm2) * 100;
+      return {
+        shape: "rect",
+        recommendedWidthMm: candidate.widthMm,
+        recommendedHeightMm: candidate.heightMm,
+        label: candidate.label,
+        recommendedLabel: candidate.label,
+        fillPercent: roundTo(fill, 1),
+        actualFillPercent: roundTo(fill, 1),
+        isAvailable: true,
+        minRequiredAreaMm2: roundTo(minRequiredAreaMm2, 0),
+        minAreaNeededMm2: roundTo(minRequiredAreaMm2, 0),
+      };
+    }
+    const maxSleeve = STANDARD_RECT_SLEEVES[STANDARD_RECT_SLEEVES.length - 1];
+    const fill = (cablesAreaMm2 / maxSleeve.areaMm2) * 100;
     return {
-      totalLengthMm: wall + 20 + 20,
-      protrusionSide1Mm: 20, // Сторона 1
-      protrusionSide2Mm: 20, // Сторона 2
-      ruleText: "Выступ гильзы на 20 мм с каждой стороны стены под штукатурку и чистовую отделку",
+      shape: "rect",
+      recommendedWidthMm: maxSleeve.widthMm,
+      recommendedHeightMm: maxSleeve.heightMm,
+      label: `${maxSleeve.label} (Переполнение!)`,
+      recommendedLabel: `${maxSleeve.label} (Переполнение!)`,
+      fillPercent: roundTo(fill, 1),
+      actualFillPercent: roundTo(fill, 1),
+      isAvailable: false,
+      minRequiredAreaMm2: roundTo(minRequiredAreaMm2, 0),
+      minAreaNeededMm2: roundTo(minRequiredAreaMm2, 0),
     };
   }
 }
 
-/**
- * Автоматический подбор минимально необходимого размера стандартной гильзы
- * по суммарной площади сечения кабелей (из условия заполнения не более 60%)
- */
-export function recommendSleeve(cablesAreaMm2: number, shape: "rect" | "round" = "round") {
-  const minAreaNeededMm2 = cablesAreaMm2 > 0 ? cablesAreaMm2 / 0.60 : 1000;
+export interface SleeveLengthResult {
+  wallThicknessMm: number;
+  totalLengthMm: number;
+  protrusionSide1Mm: number;
+  protrusionSide2Mm: number;
+  ruleText: string;
+}
 
-  if (shape === "round") {
-    // Минимальный внутренний диаметр для круглой гильзы
-    const minDiameterMm = Math.ceil(Math.sqrt((4 * minAreaNeededMm2) / Math.PI));
-    // Ищем стандартную трубу из сортамента
-    const standardMatch = STANDARD_ROUND_SLEEVES.find((s) => s.internalDiameterMm >= minDiameterMm);
-    const chosen = standardMatch || {
-      diameterMm: minDiameterMm,
-      internalDiameterMm: minDiameterMm,
-      wallThicknessMm: 4.0,
-      label: `Труба Ø${minDiameterMm} мм (нестандартная)`,
-      du: minDiameterMm,
-      areaMm2: (Math.PI * minDiameterMm * minDiameterMm) / 4,
-    };
+export function calculateSleeveLength(
+  wallThicknessMm: number,
+  isFloorPenetration: boolean = false
+): SleeveLengthResult {
+  const wall = Math.max(50, wallThicknessMm || 200);
 
-    const actualFillPercent = chosen.areaMm2 > 0 ? (cablesAreaMm2 / chosen.areaMm2) * 100 : 0;
-
+  if (isFloorPenetration) {
+    const protrusionSide1Mm = 50; // Выпуск выше чистого пола по ПУЭ 2.1.58
+    const protrusionSide2Mm = 20; // Выпуск ниже потолка
+    const totalLengthMm = wall + protrusionSide1Mm + protrusionSide2Mm;
     return {
-      shape: "round" as const,
-      minAreaNeededMm2: roundTo(minAreaNeededMm2, 1),
-      minDiameterMm,
-      recommendedDiameterMm: chosen.diameterMm,
-      recommendedInternalDiameterMm: chosen.internalDiameterMm,
-      recommendedLabel: chosen.label,
-      recommendedAreaMm2: roundTo(chosen.areaMm2, 1),
-      actualFillPercent: roundTo(actualFillPercent, 1),
-      isStandard: !!standardMatch,
+      wallThicknessMm: wall,
+      totalLengthMm,
+      protrusionSide1Mm,
+      protrusionSide2Mm,
+      ruleText: `ПУЭ 2.1.58: выпуск гильзы на +50 мм выше отметки чистого пола (защита от воды) и +20 мм снизу плиты перекрытия`,
     };
   } else {
-    // Ищем стандартный короб
-    const standardMatch = STANDARD_RECT_SLEEVES.find((s) => s.areaMm2 >= minAreaNeededMm2);
-    const side = Math.ceil(Math.sqrt(minAreaNeededMm2));
-    const chosen = standardMatch || {
-      widthMm: side,
-      heightMm: side,
-      label: `Короб ${side} × ${side} мм`,
-      areaMm2: side * side,
-    };
-
-    const actualFillPercent = chosen.areaMm2 > 0 ? (cablesAreaMm2 / chosen.areaMm2) * 100 : 0;
-
+    const protrusionSide1Mm = 20; // Стены: по 20 мм с каждой стороны под штукатурку/отделку
+    const protrusionSide2Mm = 20;
+    const totalLengthMm = wall + protrusionSide1Mm + protrusionSide2Mm;
     return {
-      shape: "rect" as const,
-      minAreaNeededMm2: roundTo(minAreaNeededMm2, 1),
-      recommendedWidthMm: chosen.widthMm,
-      recommendedHeightMm: chosen.heightMm,
-      recommendedLabel: chosen.label,
-      recommendedAreaMm2: roundTo(chosen.areaMm2, 1),
-      actualFillPercent: roundTo(actualFillPercent, 1),
-      isStandard: !!standardMatch,
+      wallThicknessMm: wall,
+      totalLengthMm,
+      protrusionSide1Mm,
+      protrusionSide2Mm,
+      ruleText: `Стены/перегородки: выпуск гильзы по +20 мм с каждой стороны от плоскости стены под чистовую отделку`,
     };
   }
 }

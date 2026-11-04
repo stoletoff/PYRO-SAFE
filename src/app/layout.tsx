@@ -13,22 +13,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PYRO-SAFE® — Инженерный калькулятор огнезащиты | svt Brandschutz",
+  title: "PYRO-SAFE® FLAMMOTECT — Инженерный калькулятор огнезащиты | svt Products",
   description:
-    "Профессиональный онлайн-калькулятор расчета расхода огнезащитных материалов FLAMMOPLAST KS 1, мастики KS 3, лака SP-2 и кабельных проходок UNIVERSALSCHOTT по нормам EN 1366-3 и ДСТУ.",
+    "Профессиональный онлайн-калькулятор расчета расхода огнезащитных материалов PYRO-SAFE FLAMMOTECT-A, шпаклевки filler, минераловатных плит и проходок Double Layer (EI 120) по Регламенту 2022 года.",
   keywords: [
     "PYRO-SAFE",
-    "svt Brandschutz",
-    "FLAMMOPLAST KS 1",
-    "UNIVERSALSCHOTT",
+    "FLAMMOTECT-A",
+    "Double Layer",
+    "EI 120",
     "огнезащита кабелей",
     "кабельные проходки",
+    "закладные гильзы",
     "калькулятор огнезащиты",
-    "EI 60",
-    "EI 180",
     "пожарная безопасность",
+    "СПЕЦЗАХИСТ",
+    "svt Products",
   ],
-  authors: [{ name: "svt Brandschutz / PYRO-SAFE" }],
+  authors: [{ name: "svt Products / PYRO-SAFE" }],
 };
 
 export default function RootLayout({

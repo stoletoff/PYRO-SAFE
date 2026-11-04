@@ -351,18 +351,11 @@ export function FlammotectPenetrationCalculator({
 Коэффициент заполнения: ${result.fillRatioPercent}% (лимит не более 60%)
 Состав коммуникаций: ${penetrantsSummary}
 ---
-ПОТРЕБНОСТЬ В МАТЕРИАЛАХ ОЗС ДЛЯ ЗАДЕЛКИ:
-${
-  result.isRoundSleeve
-    ? `1. Базальтовая минеральная вата 150 кг/м³ (набивка полости ${result.cavityVolumeLiters} л, толщина ${wallThicknessMm} мм): ${result.looseWoolMassKg} кг
-2. FLAMMOTECT-A filler (шпаклевка для торцевых пробок ≥25 мм): ${result.fillerMassKg} кг (${result.fillerBucketsCount} вёдер по 12.5 кг)
-3. FLAMMOTECT-A coating (краска для торцов и кабелей): ${result.coatingMassKg} кг (${result.coatingBucketsCount} вёдер по 12.5 кг)
-4. Минплита 150 кг/м³: не требуется (в круглой гильзе полость набивается ватой)`
-    : `1. FLAMMOTECT-A coating (краска): ${result.coatingMassKg} кг (${result.coatingBucketsCount} вёдер по 12.5 кг)
+ПОТРЕБНОСТЬ В МАТЕРИАЛАХ ОЗС (ПО РЕГЛАМЕНТУ, ТАБЛИЦА 10):
+1. FLAMMOTECT-A coating (краска): ${result.coatingMassKg} кг (${result.coatingBucketsCount} вёдер по 12.5 кг)
 2. FLAMMOTECT-A filler (шпаклевка): ${result.fillerMassKg} кг (${result.fillerBucketsCount} вёдер по 12.5 кг)
 3. Минплита 150 кг/м³ (толщина 60 мм, 2 слоя): ${result.boardAreaM2} м²
-4. Рассыпная базальтовая вата: ${result.looseWoolMassKg} кг`
-}
+4. Рассыпная базальтовая вата: ${result.looseWoolMassKg} кг
 ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG-CR BS: ${result.dgCrBsMeters} пог. м\n` : ""}Контроль: ${result.measurementsCount} контрольных замера толщины гребенкой/штангенциркулем
 Дата: ${new Date().toLocaleDateString("ru-RU")}
     `.trim();
@@ -411,11 +404,11 @@ ${penetrantsList || "  • Кабели по кабельному журналу
 
 4. ПОСЛЕДУЮЩАЯ ОГНЕЗАЩИТНАЯ ЗАДЕЛКА (ОЗС):
 - Выполняется специализированной электромонтажной организацией после завершения прокладки кабелей.
-${
-  result.isRoundSleeve
-    ? `- Заделка полости гильзы: плотная объемная набивка базальтовой ватой плотностью ≥ 150 кг/м³ на всю глубину стены ${wallThicknessMm} мм (расход ваты: ${result.looseWoolMassKg} кг, объем свободной полости: ${result.cavityVolumeLiters} л).\n- Торцы гильзы: огнезащитные пробки глубиной ≥ 25 мм из шпаклевки FLAMMOTECT-A filler (${result.fillerMassKg} кг) и окраска составом FLAMMOTECT-A coating (${result.coatingMassKg} кг). Предел огнестойкости: EI 120.`
-    : `- Заделка проема/короба выполняется системой PYRO-SAFE FLAMMOTECT-A Double Layer с пределом огнестойкости EI 120 (двухслойная минераловатная плита 150 кг/м³ толщиной 2×60 мм — ${result.boardAreaM2} м², рассыпная вата — ${result.looseWoolMassKg} кг, огнезащитное покрытие FLAMMOTECT-A coating d.f.t. ≥ 1.0 мм и шпаклевка FLAMMOTECT-A filler).`
-}
+- Заделка гильзы/проема выполняется сертифицированной системой PYRO-SAFE FLAMMOTECT-A Double Layer (EI 120) по Таблице 10 Регламента:
+  • FLAMMOTECT-A coating (краска): ${result.coatingMassKg} кг
+  • FLAMMOTECT-A filler (шпаклевка): ${result.fillerMassKg} кг
+  • Минплита 150 кг/м³ (толщина 60 мм, 2 слоя): ${result.boardAreaM2} м²
+  • Рассыпная базальтовая вата: ${result.looseWoolMassKg} кг
 Дата: ${new Date().toLocaleDateString("ru-RU")}
     `.trim();
 
@@ -1279,107 +1272,63 @@ ${
                       </div>
                     </div>
 
-                    {result.isRoundSleeve ? (
-                      <>
-                        {/* Mineral wool packing for round sleeve */}
-                        <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-950/30 to-slate-950/90 border border-amber-800/40 flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center">
-                              <span className="text-xs font-bold text-amber-300 block">
-                                Базальтовая минвата 150 кг/м³ (набивка гильзы)
-                              </span>
-                              <FormulaTooltip
-                                title="Базальтовая вата (объемная набивка гильзы)"
-                                formula="M = V_полости × ρ_ваты × K_упл = ((S_гильзы - ∑S_каб) × H_стены) × 150 кг/м³ × K"
-                                calculation={`V_пол = ${result.cavityVolumeLiters} л (${result.cavityVolumeM3} м³), M = ${result.cavityVolumeM3} м³ × 150 кг/м³ × ${formValues.includeCuttingLosses ? "1.25" : "1.10"} = ${result.looseWoolMassKg} кг`}
-                                notes={`Для круглой трубной гильзы полость между кабелями набивается базальтовой ватой плотностью ≥ 150 кг/м³ на всю глубину стены (${wallThicknessMm} мм). Запас на уплотнение: ${formValues.includeCuttingLosses ? "+25%" : "+10%"}.`}
-                              />
-                            </div>
-                            <span className="text-[11px] text-slate-400">
-                              Объем полости: <strong className="text-amber-200 font-mono">{result.cavityVolumeLiters} л</strong> (глубина {wallThicknessMm} мм)
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-lg font-black text-amber-400 font-mono">
-                              {result.looseWoolMassKg} кг
-                            </span>
-                            <span className="text-[10px] text-amber-500/80 block font-mono">
-                              (набивка на {wallThicknessMm} мм)
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Informational badge that rigid boards are not needed for round sleeves */}
-                        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs">
-                          <div>
-                            <span className="text-slate-400 block font-medium">
-                              Жесткая минплита (толщина 60 мм):
-                            </span>
-                            <span className="text-[10px] text-slate-500">
-                              Не требуется для круглых гильз (полость набивается ватой)
-                            </span>
-                          </div>
-                          <span className="text-xs font-mono font-bold text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                            0 м²
+                    {/* Mineral wool boards */}
+                    <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center">
+                          <span className="text-xs font-bold text-white block">
+                            Минплита 150 кг/м³ (толщина 60 мм)
                           </span>
+                          <FormulaTooltip
+                            title="Минераловатная плита 150 кг/м³"
+                            formula="S_плит = S_проема × 2.0 м²/м² × K_раскроя"
+                            calculation={`${result.openingAreaM2} м² × 2.0 × ${cuttingLossFactor} = ${result.boardAreaM2} м²`}
+                            notes={`Система Double layer (EI 120, толщина уплотнения 120 мм) состоит из 2 слоев плит по 60 мм. Базовая норма 2.0 м² плиты на 1 м² проходки. Запас на раскрой: ${formValues.includeCuttingLosses ? "+30%" : "0%"}.`}
+                          />
                         </div>
-                      </>
-                    ) : (
-                      <>
-                        {/* Mineral wool boards for rectangular openings */}
-                        <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center">
-                              <span className="text-xs font-bold text-white block">
-                                Минплита 150 кг/м³ (толщина 60 мм)
-                              </span>
-                              <FormulaTooltip
-                                title="Минераловатная плита 150 кг/м³"
-                                formula="S_плит = S_проема × 2 слоя × K_раскроя"
-                                calculation={`${result.openingAreaM2} м² × 2 слоя × ${cuttingLossFactor} = ${result.boardAreaM2} м²`}
-                                notes={`Система Double layer (EI 120, толщина уплотнения ≥ 120 мм) состоит из 2 слоев плит по 60 мм. Запас на раскрой: ${formValues.includeCuttingLosses ? "+30%" : "0%"}.`}
-                              />
-                            </div>
-                            <span className="text-[11px] text-slate-400">
-                              2 слоя (общая толщина 120 мм, EI 120)
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-lg font-black text-amber-400 font-mono">
-                              {result.boardAreaM2} м²
-                            </span>
-                            <span className="text-[11px] text-slate-500 block font-mono">
-                              (2 слоя плит)
-                            </span>
-                          </div>
-                        </div>
+                        <span className="text-[11px] text-slate-400">
+                          2 слоя (общая толщина 120 мм, EI 120)
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-black text-amber-400 font-mono">
+                          {result.boardAreaM2} м²
+                        </span>
+                        <span className="text-[11px] text-slate-500 block font-mono">
+                          (2 слоя плит)
+                        </span>
+                      </div>
+                    </div>
 
-                        {/* Loose mineral wool for rectangular openings */}
-                        <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center">
-                              <span className="text-xs font-bold text-white block">
-                                Рассыпная базальтовая минвата
-                              </span>
-                              <FormulaTooltip
-                                title="Рассыпная базальтовая минвата"
-                                formula="M = S_проема × 1.52 кг/м² × K_потерь"
-                                calculation={`${result.openingAreaM2} м² × 1.52 × ${woolLossFactor} = ${result.looseWoolMassKg} кг`}
-                                notes={`Базовая норма 1.52 кг/м² для плотной набивки полостей и зазоров вокруг кабелей/труб. Запас: ${formValues.includeCuttingLosses ? "+30%" : "0%"}.`}
-                              />
-                            </div>
-                            <span className="text-[11px] text-slate-400">
-                              Набивка зазоров и пустот (1,52 кг/м²)
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-lg font-black text-slate-300 font-mono">
-                              {result.looseWoolMassKg} кг
-                            </span>
-                          </div>
+                    {/* Loose mineral wool */}
+                    <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center">
+                          <span className="text-xs font-bold text-white block">
+                            Рассыпная базальтовая минвата
+                          </span>
+                          <FormulaTooltip
+                            title="Рассыпная базальтовая минвата"
+                            formula="M = S_проема × 1.52 кг/м² × K_уплотнения"
+                            calculation={`${result.openingAreaM2} м² × 1.52 × ${woolLossFactor} = ${result.looseWoolMassKg} кг`}
+                            notes={`Базовая норма 1.52 кг/м² для плотной набивки полостей и зазоров вокруг кабелей по Таблице 10 Регламента. Запас на уплотнение: ${formValues.includeCuttingLosses ? "+30%" : "0%"}.`}
+                          />
                         </div>
-                      </>
-                    )}
+                        <span className="text-[11px] text-slate-400">
+                          {result.isRoundSleeve ? `Заполнение гильзы (норма 1,52 кг/м²)` : `Набивка зазоров и пустот (1,52 кг/м²)`}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-black text-slate-200 font-mono">
+                          {result.looseWoolMassKg} кг
+                        </span>
+                        {result.looseWoolMassKg < 0.1 && (
+                          <span className="text-[10px] text-slate-500 block font-mono">
+                            ({(result.looseWoolMassKg * 1000).toFixed(1)} г)
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
                     {/* DG-CR BS wrap (if plastic pipes present) */}
                     {result.dgCrBsMeters > 0 && (
@@ -1520,15 +1469,9 @@ ${
                     <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
                       4. Заделка ОЗС (электромонтажниками):
                     </span>
-                    {result.isRoundSleeve ? (
-                      <p className="text-slate-400 leading-normal">
-                        Полость гильзы набивается <strong className="text-amber-300">базальтовой ватой 150 кг/м³</strong> на всю глубину стены ({wallThicknessMm} мм) — потребность <strong className="text-white font-mono">{result.looseWoolMassKg} кг</strong> (объем свободной полости {result.cavityVolumeLiters} л). Торцы гильзы с двух сторон герметизируются шпаклевкой <strong className="text-white font-mono">FLAMMOTECT-A filler</strong> на глубину ≥ 25 мм ({result.fillerMassKg} кг) и окрашиваются <strong className="text-white font-mono">FLAMMOTECT-A coating</strong> ({result.coatingMassKg} кг). Предел огнестойкости: <strong className="text-emerald-400">EI 120</strong>.
-                      </p>
-                    ) : (
-                      <p className="text-slate-400 leading-normal">
-                        После протяжки кабелей полость проема подлежит огнезащитной заделке системой <strong className="text-white">PYRO-SAFE FLAMMOTECT-A Double Layer EI 120</strong> (базальтовые плиты 150 кг/м³ 2×60 мм — {result.boardAreaM2} м², рассыпная вата — {result.looseWoolMassKg} кг, огнезащитное покрытие coating и шпаклевка filler).
-                      </p>
-                    )}
+                    <p className="text-slate-400 leading-normal">
+                      После протяжки кабелей полость гильзы/проема подлежит огнезащитной заделке сертифицированной системой <strong className="text-white">PYRO-SAFE FLAMMOTECT-A Double Layer (EI 120)</strong> по нормам Таблицы 10 Регламента: минплита 150 кг/м³ (2×60 мм) — <span className="text-white font-mono">{result.boardAreaM2} м²</span>, базальтовая вата — <span className="text-white font-mono">{result.looseWoolMassKg} кг</span>, краска coating — <span className="text-white font-mono">{result.coatingMassKg} кг</span>, шпаклевка filler — <span className="text-white font-mono">{result.fillerMassKg} кг</span>.
+                    </p>
                   </div>
                 </div>
 
