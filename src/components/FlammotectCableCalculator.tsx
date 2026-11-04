@@ -811,51 +811,160 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                     </div>
                   </div>
 
-                  {/* Live formula substitution card */}
-                  <div className="p-4 bg-slate-950/90 border border-teal-800/40 rounded-xl space-y-2.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-teal-300 uppercase tracking-wider flex items-center">
-                        <Sparkles className="w-3.5 h-3.5 mr-1.5 text-teal-400" />
-                        Нормативная подстановка в расчет площади:
-                      </span>
-                      <span className="text-white font-mono font-bold text-sm bg-teal-950 px-2.5 py-0.5 rounded border border-teal-800/50">
-                        S = {result.areaM2} м²
-                      </span>
-                    </div>
-
-                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 font-mono text-xs text-teal-300">
-                      S = L × π × D × 1.5{Number(formValues.cableCount) > 1 ? ` × N` : ""}
-                    </div>
-
-                    <div className="p-2.5 rounded-lg bg-teal-950/30 border border-teal-800/40 font-mono text-xs text-emerald-300 break-words leading-relaxed">
-                      S = {formValues.lengthM || 0} м × 3.1416 × {(effectiveDiaMm / 1000).toFixed(4)} м × 1.5{Number(formValues.cableCount) > 1 ? ` × ${formValues.cableCount} шт.` : ""} = <strong className="text-white font-bold">{result.areaM2} м²</strong>
-                    </div>
-
-                    <div className="text-[11px] text-slate-400 space-y-1 pt-1.5 border-t border-slate-800/70">
-                      <div className="flex items-start space-x-1.5">
-                        <span className="text-teal-400 font-mono font-bold">•</span>
-                        <span>
-                          <strong className="text-slate-300 font-mono">L = {formValues.lengthM || 0} м</strong> — длина кабельной трассы
+                  {/* Live formula substitution card styled in the exact same premium aesthetic */}
+                  <div className="p-4 bg-slate-950/90 border border-teal-800/50 rounded-2xl space-y-3.5 shadow-inner">
+                    {/* Header row */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">
+                          Нормативный расчет площади окраски пучка (п. 3.2.3 Регламента)
                         </span>
                       </div>
-                      <div className="flex items-start space-x-1.5">
-                        <span className="text-teal-400 font-mono font-bold">•</span>
-                        <span>
-                          <strong className="text-slate-300 font-mono">D = {effectiveDiaMm} мм ({(effectiveDiaMm / 1000).toFixed(4)} м)</strong> — расчетный диаметр пучка из Шага 2
+                      <div className="flex items-center space-x-2 shrink-0">
+                        <span className="text-xs text-slate-400">Площадь покрытия:</span>
+                        <span className="text-xs font-mono font-bold text-teal-300 bg-teal-950 px-2 py-0.5 rounded border border-teal-800/40">
+                          S = {result.areaM2} м²
                         </span>
                       </div>
-                      <div className="flex items-start space-x-1.5">
-                        <span className="text-teal-400 font-mono font-bold">•</span>
-                        <span>
-                          <strong className="text-slate-300 font-mono">1.5</strong> — нормативный коэффициент формы пучка по п. 3.2.3 Регламента 2022 (учитывает волнистый рельеф внешней поверхности круглых кабелей в пучке)
-                        </span>
+                    </div>
+
+                    {/* Formula display block with mathematical typography and schematic longitudinal route */}
+                    <div className="p-3.5 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/30 rounded-xl border border-slate-800/90 flex flex-col md:flex-row items-center justify-between gap-4">
+                      {/* Mathematical typesetting */}
+                      <div className="space-y-2 flex-1 w-full">
+                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          Нормативная формула площади жгута:
+                        </div>
+
+                        {/* Styled Mathematical Equation */}
+                        <div className="flex flex-wrap items-center gap-1.5 py-1 text-white font-serif select-none">
+                          <span className="text-xl font-bold italic text-teal-300 font-sans">S</span>
+                          <span className="text-slate-400 text-lg font-sans">=</span>
+                          <span className="text-lg font-bold italic text-white font-sans">L</span>
+                          <span className="text-slate-400 text-sm font-sans">×</span>
+                          <span className="text-lg font-bold font-serif text-amber-300">π</span>
+                          <span className="text-slate-400 text-sm font-sans">×</span>
+                          <span className="text-lg font-bold italic text-teal-300 font-sans">D</span>
+                          <span className="text-slate-400 text-sm font-sans">×</span>
+                          <span className="text-lg font-semibold font-mono text-white">1,5</span>
+                          {Number(formValues.cableCount) > 1 && (
+                            <>
+                              <span className="text-slate-400 text-sm font-sans">×</span>
+                              <span className="text-lg font-bold italic text-white font-sans">N</span>
+                            </>
+                          )}
+                          <span className="text-slate-400 text-lg font-sans">=</span>
+                          <span className="text-xl font-black font-mono text-teal-300 px-2.5 py-0.5 rounded-lg bg-teal-950/80 border border-teal-700/60 shadow-sm">
+                            {result.areaM2} м²
+                          </span>
+                        </div>
+
+                        {/* Live numerical expansion */}
+                        <div className="text-[11px] font-mono text-slate-300 bg-slate-950/80 px-2.5 py-1.5 rounded-lg border border-slate-800/80 break-words leading-relaxed">
+                          <span className="text-slate-500">Числовая подстановка: </span>
+                          <span className="text-emerald-400">
+                            S = {formValues.lengthM || 0} × 3,1416 × {(effectiveDiaMm / 1000).toFixed(4)} × 1,5{Number(formValues.cableCount) > 1 ? ` × ${formValues.cableCount}` : ""} = {result.areaM2} м²
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Vector schematic of painted cable route */}
+                      <div className="shrink-0 flex items-center space-x-2.5 p-2 bg-slate-950/70 border border-slate-800 rounded-xl">
+                        <svg
+                          width="60"
+                          height="60"
+                          viewBox="0 0 64 64"
+                          fill="none"
+                          className="shrink-0 select-none"
+                          aria-label="Схема окраски кабельной трассы"
+                        >
+                          {/* Longitudinal cylinder / painted cable bundle */}
+                          <rect
+                            x="6"
+                            y="18"
+                            width="52"
+                            height="28"
+                            rx="6"
+                            fill="#0f172a"
+                            stroke="#14b8a6"
+                            strokeWidth="1.5"
+                          />
+                          {/* Coating layer highlight (top & bottom) */}
+                          <path d="M6 18 Q 32 14 58 18" stroke="#2dd4bf" strokeWidth="2.5" fill="none" />
+                          <path d="M6 46 Q 32 50 58 46" stroke="#2dd4bf" strokeWidth="2.5" fill="none" />
+                          {/* End ellipses */}
+                          <ellipse cx="14" cy="32" rx="4" ry="12" fill="#1e293b" stroke="#14b8a6" strokeWidth="1" />
+                          <ellipse cx="14" cy="32" rx="2" ry="6" fill="#f97316" />
+                          {/* Length dimension arrow L */}
+                          <line
+                            x1="6"
+                            y1="56"
+                            x2="58"
+                            y2="56"
+                            stroke="#f59e0b"
+                            strokeWidth="1"
+                            strokeDasharray="2 1.5"
+                          />
+                          <text
+                            x="32"
+                            y="62"
+                            fill="#f59e0b"
+                            fontSize="8"
+                            fontWeight="bold"
+                            textAnchor="middle"
+                            fontFamily="monospace"
+                          >
+                            L = {formValues.lengthM || 0}м
+                          </text>
+                          {/* Diameter callout D */}
+                          <line
+                            x1="56"
+                            y1="18"
+                            x2="56"
+                            y2="46"
+                            stroke="#5eead4"
+                            strokeWidth="1"
+                            strokeDasharray="1.5 1.5"
+                          />
+                          <text
+                            x="44"
+                            y="35"
+                            fill="#5eead4"
+                            fontSize="8"
+                            fontWeight="bold"
+                            textAnchor="middle"
+                            fontFamily="monospace"
+                          >
+                            Ø D
+                          </text>
+                        </svg>
+                        <div className="text-[10px] text-slate-400 font-sans leading-tight">
+                          <strong className="text-teal-300 block font-mono">S = {result.areaM2} м²</strong>
+                          Окраска на 360°<br />
+                          с коэфф. 1,5
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-[11px] text-slate-400 pt-1">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-serif italic font-bold text-teal-300 text-xs">L</span>
+                        <span>= {formValues.lengthM || 0} м (длина трассы)</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-serif italic font-bold text-teal-300 text-xs">D</span>
+                        <span>= {effectiveDiaMm} мм (диаметр пучка)</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-mono font-bold text-amber-300 text-xs">1,5</span>
+                        <span>— коэф. формы (п. 3.2.3)</span>
                       </div>
                       {Number(formValues.cableCount) > 1 && (
-                        <div className="flex items-start space-x-1.5">
-                          <span className="text-teal-400 font-mono font-bold">•</span>
-                          <span>
-                            <strong className="text-slate-300 font-mono">N = {formValues.cableCount} шт.</strong> — количество параллельных пучков
-                          </span>
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-serif italic font-bold text-teal-300 text-xs">N</span>
+                          <span>= {formValues.cableCount} шт. (пучков)</span>
                         </div>
                       )}
                     </div>
@@ -968,6 +1077,148 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                     </p>
                   </div>
                 )}
+
+                {/* Live formula substitution card for Single / Trays */}
+                <div className="p-4 bg-slate-950/90 border border-teal-800/50 rounded-2xl space-y-3.5 shadow-inner mt-3">
+                  {/* Header row */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">
+                        Нормативный расчет площади окраски (п. 3.2 Регламента)
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className="text-xs text-slate-400">Площадь покрытия:</span>
+                      <span className="text-xs font-mono font-bold text-teal-300 bg-teal-950 px-2 py-0.5 rounded border border-teal-800/40">
+                        S = {result.areaM2} м²
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Formula display block with mathematical typography and schematic */}
+                  <div className="p-3.5 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/30 rounded-xl border border-slate-800/90 flex flex-col md:flex-row items-center justify-between gap-4">
+                    {/* Mathematical typesetting */}
+                    <div className="space-y-2 flex-1 w-full">
+                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        {formValues.installationType === "single"
+                          ? "Нормативная формула для одиночного кабеля (п. 3.2.2):"
+                          : formValues.installationType === "tray_solid"
+                          ? "Нормативная формула для глухого короба (п. 3.2.1):"
+                          : "Нормативная формула для сетчатого короба (п. 3.2.1):"}
+                      </div>
+
+                      {/* Styled Mathematical Equation */}
+                      <div className="flex flex-wrap items-center gap-1.5 py-1 text-white font-serif select-none">
+                        <span className="text-xl font-bold italic text-teal-300 font-sans">S</span>
+                        <span className="text-slate-400 text-lg font-sans">=</span>
+                        <span className="text-lg font-bold italic text-white font-sans">L</span>
+                        <span className="text-slate-400 text-sm font-sans">×</span>
+
+                        {formValues.installationType === "single" ? (
+                          <>
+                            <span className="text-lg font-bold font-serif text-amber-300">π</span>
+                            <span className="text-slate-400 text-sm font-sans">×</span>
+                            <span className="text-lg font-bold italic text-teal-300 font-sans">d</span>
+                          </>
+                        ) : formValues.installationType === "tray_solid" ? (
+                          <>
+                            <span className="text-lg font-bold italic text-teal-300 font-sans">b</span>
+                            <span className="text-slate-400 text-sm font-sans">×</span>
+                            <span className="text-lg font-semibold font-mono text-white">1,5</span>
+                            {(formValues.shelvesCount || 1) > 1 && (
+                              <>
+                                <span className="text-slate-400 text-sm font-sans">×</span>
+                                <span className="text-lg font-bold italic text-white font-sans">
+                                  N<sub>полок</sub>
+                                </span>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-lg font-bold italic text-teal-300 font-sans">b</span>
+                            <span className="text-slate-400 text-sm font-sans">×</span>
+                            <span className="text-lg font-semibold font-mono text-white">1,5</span>
+                            <span className="text-slate-400 text-sm font-sans">×</span>
+                            <span className="text-lg font-semibold font-mono text-white">2</span>
+                            {(formValues.shelvesCount || 1) > 1 && (
+                              <>
+                                <span className="text-slate-400 text-sm font-sans">×</span>
+                                <span className="text-lg font-bold italic text-white font-sans">
+                                  N<sub>полок</sub>
+                                </span>
+                              </>
+                            )}
+                          </>
+                        )}
+
+                        <span className="text-slate-400 text-lg font-sans">=</span>
+                        <span className="text-xl font-black font-mono text-teal-300 px-2.5 py-0.5 rounded-lg bg-teal-950/80 border border-teal-700/60 shadow-sm">
+                          {result.areaM2} м²
+                        </span>
+                      </div>
+
+                      {/* Live numerical expansion */}
+                      <div className="text-[11px] font-mono text-slate-300 bg-slate-950/80 px-2.5 py-1.5 rounded-lg border border-slate-800/80 break-words leading-relaxed">
+                        <span className="text-slate-500">Числовая подстановка: </span>
+                        <span className="text-emerald-400">
+                          {result.formulaExplanation}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Vector schematic of single cable / tray */}
+                    <div className="shrink-0 flex items-center space-x-2.5 p-2 bg-slate-950/70 border border-slate-800 rounded-xl">
+                      <svg
+                        width="60"
+                        height="60"
+                        viewBox="0 0 64 64"
+                        fill="none"
+                        className="shrink-0 select-none"
+                        aria-label="Схема прокладки"
+                      >
+                        <rect x="6" y="20" width="52" height="24" rx="4" fill="#0f172a" stroke="#14b8a6" strokeWidth="1.5" />
+                        <path d="M6 20 Q 32 17 58 20" stroke="#2dd4bf" strokeWidth="2.5" fill="none" />
+                        <ellipse cx="14" cy="32" rx="3.5" ry="10" fill="#1e293b" stroke="#14b8a6" strokeWidth="1" />
+                        <line x1="6" y1="52" x2="58" y2="52" stroke="#f59e0b" strokeWidth="1" strokeDasharray="2 1.5" />
+                        <text x="32" y="58" fill="#f59e0b" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="monospace">
+                          L = {formValues.lengthM || 0}м
+                        </text>
+                      </svg>
+                      <div className="text-[10px] text-slate-400 font-sans leading-tight">
+                        <strong className="text-teal-300 block font-mono">S = {result.areaM2} м²</strong>
+                        {formValues.installationType === "single"
+                          ? "Одиночный кабель"
+                          : formValues.installationType === "tray_solid"
+                          ? "Глухой лоток"
+                          : "Сетчатый (2 стороны)"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-400 pt-1">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="font-serif italic font-bold text-teal-300 text-xs">L</span>
+                      <span>= {formValues.lengthM || 0} м (длина трассы)</span>
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      <span className="font-serif italic font-bold text-teal-300 text-xs">
+                        {formValues.installationType === "single" ? "d" : "b"}
+                      </span>
+                      <span>
+                        = {formValues.dimensionMm} мм ({formValues.installationType === "single" ? "диаметр" : "ширина"})
+                      </span>
+                    </div>
+                    {formValues.installationType !== "single" && (
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-mono font-bold text-amber-300 text-xs">1,5</span>
+                        <span>— коэф. кабелей (п. 3.2.1)</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1146,14 +1397,20 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
               </div>
             </div>
 
-            {/* Formula explanation box */}
-            <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-1 text-xs">
-              <span className="text-[10px] uppercase font-mono text-slate-400 block">
-                Формула расчета площади (п. 3.2 Регламента):
-              </span>
-              <p className="font-mono text-emerald-400 text-[11px] leading-relaxed break-words">
+            {/* Formula explanation box styled with glowing dot & badge */}
+            <div className="p-3.5 bg-gradient-to-r from-teal-950/40 via-slate-950 to-slate-950 border border-teal-800/50 rounded-2xl space-y-2 shadow-inner">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] uppercase font-bold text-teal-300 tracking-wider flex items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-400 mr-2 animate-pulse" />
+                  Расчет площади (п. 3.2 Регламента):
+                </span>
+                <span className="font-mono font-bold text-xs text-emerald-300 bg-teal-950 px-2 py-0.5 rounded border border-teal-800/40">
+                  S = {result.areaM2} м²
+                </span>
+              </div>
+              <div className="font-mono text-emerald-400 text-xs leading-relaxed bg-slate-900/90 p-2.5 rounded-xl border border-slate-800/90 break-words">
                 {result.formulaExplanation}
-              </p>
+              </div>
             </div>
 
             {/* Quality control guidelines */}
