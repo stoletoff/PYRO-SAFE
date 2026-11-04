@@ -522,31 +522,156 @@ ${countLine}Толщина сухого слоя (DFT): ${formValues.dryFilmThic
                         </div>
                       </div>
 
-                      {/* Realtime bundle diameter calculation card */}
-                      <div className="p-3.5 bg-gradient-to-r from-teal-950/50 via-slate-900 to-slate-900 border border-teal-800/50 rounded-xl space-y-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                          <span className="text-xs text-slate-300">
-                            Всего в пучке:{" "}
-                            <strong className="text-white font-mono font-bold">
-                              {result.totalBundleCablesCount || 0} шт. кабелей
-                            </strong>
-                          </span>
+                      {/* Realtime bundle diameter calculation card with mathematical typography */}
+                      <div className="p-4 bg-slate-950/90 border border-teal-800/50 rounded-2xl space-y-3.5 shadow-inner">
+                        {/* Header row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
                           <div className="flex items-center space-x-2">
-                            <span className="text-xs text-slate-400">Расчетный диаметр пучка:</span>
-                            <span className="text-sm text-teal-300 font-bold font-mono bg-teal-950/80 px-2.5 py-0.5 rounded-lg border border-teal-700/50">
-                              D = {effectiveDiaMm} мм
+                            <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                            <span className="text-xs font-bold text-white uppercase tracking-wider">
+                              Эквивалентный расчетный диаметр жгута кабелей
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 shrink-0">
+                            <span className="text-xs text-slate-400">Всего кабелей в пучке:</span>
+                            <span className="text-xs font-mono font-bold text-teal-300 bg-teal-950 px-2 py-0.5 rounded border border-teal-800/40">
+                              {result.totalBundleCablesCount || 0} шт.
                             </span>
                           </div>
                         </div>
-                        <div className="font-mono text-[11px] text-emerald-400 bg-slate-950/90 p-2.5 rounded-lg border border-slate-800 leading-relaxed">
-                          Формула эквивалентного диаметра жгута:
-                          <br />
-                          <span className="text-teal-300 font-semibold">
-                            D = 1.15 × √(∑ n_i × d_i²) = {effectiveDiaMm} мм
-                          </span>
-                          <span className="block text-[10px] text-slate-400 mt-1 font-sans">
-                            (где d_i — наружный диаметр кабеля, n_i — количество кабелей, 1.15 — коэффициент скрутки жгута)
-                          </span>
+
+                        {/* Formula display block with mathematical typography and schematic cross-section */}
+                        <div className="p-3.5 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/30 rounded-xl border border-slate-800/90 flex flex-col md:flex-row items-center justify-between gap-4">
+                          {/* Mathematical typesetting */}
+                          <div className="space-y-2 flex-1 w-full">
+                            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                              Нормативная формула жгута:
+                            </div>
+
+                            {/* Styled Mathematical Equation */}
+                            <div className="flex flex-wrap items-center gap-1.5 py-1 text-white font-serif select-none">
+                              <span className="text-xl font-bold italic text-teal-300 font-sans">D</span>
+                              <span className="text-slate-400 text-lg font-sans">=</span>
+                              <span className="text-lg font-semibold font-mono text-white">1,15</span>
+                              <span className="text-slate-400 text-sm font-sans">×</span>
+
+                              {/* Radical Expression with overbar */}
+                              <div className="inline-flex items-stretch text-emerald-300">
+                                {/* Radical hook */}
+                                <span className="text-2xl leading-none text-teal-400 font-light translate-y-0.5">
+                                  √
+                                </span>
+                                {/* Content under radical with true overline bar */}
+                                <div className="border-t-2 border-teal-400 pt-0.5 px-2 flex items-center space-x-1.5 bg-teal-950/40 rounded-r font-sans">
+                                  <span className="text-xl font-bold text-teal-300">∑</span>
+                                  <div className="flex items-center text-sm">
+                                    <span className="italic font-serif text-slate-200">n</span>
+                                    <sub className="text-[10px] text-teal-400 font-mono -bottom-1">i</sub>
+                                    <span className="mx-1 text-slate-500">·</span>
+                                    <span className="italic font-serif text-slate-200">d</span>
+                                    <sub className="text-[10px] text-teal-400 font-mono -bottom-1">i</sub>
+                                    <sup className="text-[10px] text-amber-300 font-bold font-mono -top-1.5 ml-0.5">2</sup>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <span className="text-slate-400 text-lg font-sans">=</span>
+                              <span className="text-xl font-black font-mono text-teal-300 px-2.5 py-0.5 rounded-lg bg-teal-950/80 border border-teal-700/60 shadow-sm">
+                                {effectiveDiaMm} мм
+                              </span>
+                            </div>
+
+                            {/* Live numerical expansion */}
+                            {currentBundleCables && currentBundleCables.length > 0 && (
+                              <div className="text-[11px] font-mono text-slate-300 bg-slate-950/80 px-2.5 py-1.5 rounded-lg border border-slate-800/80 break-words leading-relaxed">
+                                <span className="text-slate-500">Числовая подстановка: </span>
+                                <span className="text-emerald-400">
+                                  D = 1,15 × √({currentBundleCables
+                                    .filter((c) => Number(c.diameterMm) > 0)
+                                    .map((c) => `${c.count || 1}×${c.diameterMm}²`)
+                                    .join(" + ") || "0"}) = {effectiveDiaMm} мм
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Vector schematic of bundle cross section */}
+                          <div className="shrink-0 flex items-center space-x-2.5 p-2 bg-slate-950/70 border border-slate-800 rounded-xl">
+                            <svg
+                              width="60"
+                              height="60"
+                              viewBox="0 0 64 64"
+                              fill="none"
+                              className="shrink-0 select-none"
+                              aria-label="Схема сечения пучка кабелей"
+                            >
+                              {/* Outer bundle boundary (D) */}
+                              <circle
+                                cx="32"
+                                cy="32"
+                                r="28"
+                                stroke="#14b8a6"
+                                strokeWidth="1.5"
+                                strokeDasharray="3 2"
+                                fill="rgba(20, 184, 166, 0.08)"
+                              />
+                              {/* Central cable */}
+                              <circle cx="32" cy="32" r="8" fill="#1e293b" stroke="#2dd4bf" strokeWidth="1.2" />
+                              <circle cx="32" cy="32" r="2.5" fill="#f97316" />
+
+                              {/* Surrounding cables */}
+                              <circle cx="21" cy="23" r="6.5" fill="#1e293b" stroke="#64748b" strokeWidth="1" />
+                              <circle cx="21" cy="23" r="2" fill="#f97316" />
+
+                              <circle cx="43" cy="23" r="6.5" fill="#1e293b" stroke="#64748b" strokeWidth="1" />
+                              <circle cx="43" cy="23" r="2" fill="#f97316" />
+
+                              <circle cx="21" cy="41" r="6.5" fill="#1e293b" stroke="#64748b" strokeWidth="1" />
+                              <circle cx="21" cy="41" r="2" fill="#f97316" />
+
+                              <circle cx="43" cy="41" r="6.5" fill="#1e293b" stroke="#64748b" strokeWidth="1" />
+                              <circle cx="43" cy="41" r="2" fill="#f97316" />
+
+                              {/* Dimension line */}
+                              <line x1="4" y1="32" x2="60" y2="32" stroke="#f59e0b" strokeWidth="1" strokeDasharray="2 2" />
+                              <text
+                                x="32"
+                                y="14"
+                                fill="#5eead4"
+                                fontSize="9"
+                                fontWeight="bold"
+                                textAnchor="middle"
+                                fontFamily="monospace"
+                              >
+                                Ø D
+                              </text>
+                            </svg>
+                            <div className="text-[10px] text-slate-400 font-sans leading-tight">
+                              <strong className="text-teal-300 block font-mono">D = {effectiveDiaMm} мм</strong>
+                              Сечение жгута<br />
+                              по огибающей
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Legend */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-400 pt-1">
+                          <div className="flex items-center space-x-1.5">
+                            <span className="font-serif italic font-bold text-teal-300 text-xs">
+                              d<sub>i</sub>
+                            </span>
+                            <span>— диаметр кабеля (мм)</span>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="font-serif italic font-bold text-teal-300 text-xs">
+                              n<sub>i</sub>
+                            </span>
+                            <span>— количество (шт.)</span>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="font-mono font-bold text-amber-300 text-xs">1,15</span>
+                            <span>— коэф. скрутки жгута</span>
+                          </div>
                         </div>
                       </div>
                     </div>
