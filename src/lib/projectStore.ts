@@ -145,6 +145,50 @@ export const projectStore = {
     }
     notify();
   },
+  moveUp(id: string) {
+    initStoreIfNeeded();
+    const idx = memoryItems.findIndex((i) => i.id === id);
+    if (idx > 0) {
+      const copy = [...memoryItems];
+      const temp = copy[idx - 1];
+      copy[idx - 1] = copy[idx];
+      copy[idx] = temp;
+      memoryItems = copy;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryItems));
+      } catch {
+        // ignore
+      }
+      notify();
+    }
+  },
+  moveDown(id: string) {
+    initStoreIfNeeded();
+    const idx = memoryItems.findIndex((i) => i.id === id);
+    if (idx >= 0 && idx < memoryItems.length - 1) {
+      const copy = [...memoryItems];
+      const temp = copy[idx + 1];
+      copy[idx + 1] = copy[idx];
+      copy[idx] = temp;
+      memoryItems = copy;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryItems));
+      } catch {
+        // ignore
+      }
+      notify();
+    }
+  },
+  reverseOrder() {
+    initStoreIfNeeded();
+    memoryItems = [...memoryItems].reverse();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryItems));
+    } catch {
+      // ignore
+    }
+    notify();
+  },
   clear() {
     initStoreIfNeeded();
     memoryItems = [];

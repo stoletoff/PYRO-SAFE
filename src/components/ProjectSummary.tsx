@@ -15,6 +15,9 @@ import {
   ShieldCheck,
   Package,
   Sparkles,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpDown,
 } from "lucide-react";
 
 interface ProjectSummaryProps {
@@ -22,6 +25,9 @@ interface ProjectSummaryProps {
   onRemoveItem: (id: string) => void;
   onClearAll: () => void;
   onNavigateToTab: (tab: "cable" | "penetration") => void;
+  onMoveUp?: (id: string) => void;
+  onMoveDown?: (id: string) => void;
+  onReverse?: () => void;
 }
 
 export function ProjectSummary({
@@ -29,6 +35,9 @@ export function ProjectSummary({
   onRemoveItem,
   onClearAll,
   onNavigateToTab,
+  onMoveUp,
+  onMoveDown,
+  onReverse,
 }: ProjectSummaryProps) {
   const [copied, setCopied] = useState(false);
   const totals = calculateProjectTotals(items);
@@ -276,14 +285,27 @@ export function ProjectSummary({
           </h3>
 
           {items.length > 0 && (
-            <button
-              type="button"
-              onClick={onClearAll}
-              className="text-xs text-red-400 hover:text-red-300 flex items-center no-print transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5 mr-1" />
-              Очистить все
-            </button>
+            <div className="flex items-center space-x-3 no-print">
+              {onReverse && (
+                <button
+                  type="button"
+                  onClick={onReverse}
+                  className="text-xs text-slate-400 hover:text-white flex items-center transition-colors"
+                  title="Инвертировать порядок строк (сверху-вниз / снизу-вверх)"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                  Инвертировать порядок
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onClearAll}
+                className="text-xs text-red-400 hover:text-red-300 flex items-center transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                Очистить все
+              </button>
+            </div>
           )}
         </div>
 
@@ -380,14 +402,38 @@ export function ProjectSummary({
                       <td className="py-3 px-3 text-amber-300">{boardM2}</td>
                       <td className="py-3 px-3 text-slate-300">{woolKg}</td>
                       <td className="py-3 px-3 no-print">
-                        <button
-                          type="button"
-                          onClick={() => onRemoveItem(item.id)}
-                          className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors"
-                          title="Удалить позицию"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center space-x-1">
+                          {onMoveUp && (
+                            <button
+                              type="button"
+                              onClick={() => onMoveUp(item.id)}
+                              disabled={index === 0}
+                              className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-20 transition-colors"
+                              title="Переместить вверх"
+                            >
+                              <ChevronUp className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {onMoveDown && (
+                            <button
+                              type="button"
+                              onClick={() => onMoveDown(item.id)}
+                              disabled={index === items.length - 1}
+                              className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-20 transition-colors"
+                              title="Переместить вниз"
+                            >
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onRemoveItem(item.id)}
+                            className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors"
+                            title="Удалить позицию"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

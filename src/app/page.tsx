@@ -60,6 +60,9 @@ export default function Home() {
             onRemoveItem={handleRemoveItem}
             onClearAll={handleClearAll}
             onNavigateToTab={(tab) => setActiveTab(tab)}
+            onMoveUp={(id) => projectStore.moveUp(id)}
+            onMoveDown={(id) => projectStore.moveDown(id)}
+            onReverse={() => projectStore.reverseOrder()}
           />
         )}
 
