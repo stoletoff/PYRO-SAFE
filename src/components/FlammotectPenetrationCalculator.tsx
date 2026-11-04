@@ -148,7 +148,7 @@ export function FlammotectPenetrationCalculator({
       heightMm: 400,
       widthMm: 600,
       diameterMm: 150,
-      applicationMethod: "brush_10",
+      applicationMethod: "sprayer_30",
       includeCuttingLosses: true,
       isFloorPenetration: false,
       penetrants: [
@@ -180,14 +180,14 @@ export function FlammotectPenetrationCalculator({
     })),
     applicationMethod:
       (formValues.applicationMethod as FlammotectApplicationMethod) ||
-      "brush_10",
+      "sprayer_30",
     includeCuttingLosses: Boolean(formValues.includeCuttingLosses),
     isFloorPenetration: Boolean(formValues.isFloorPenetration),
     wallThicknessMm: Number(wallThicknessMm) || 200,
   });
 
   const coatingLossFactor =
-    FLAMMOTECT_APPLICATION_LOSSES[formValues.applicationMethod]?.factor || 1.10;
+    FLAMMOTECT_APPLICATION_LOSSES[formValues.applicationMethod]?.factor || 1.30;
   const cuttingLossFactor = formValues.includeCuttingLosses
     ? FLAMMOTECT_PENETRATION_CONSTANTS.BOARD_CUTTING_LOSS_FACTOR
     : 1.0;
@@ -1029,9 +1029,9 @@ ${result.dgCrBsMeters > 0 ? `5. Противопожарная обмотка DG
                       onChange={(e) => field.onChange(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500"
                     >
-                      <option value="brush_5">Кисть / шпатель (+5% потерь)</option>
+                      <option value="sprayer_30">Распылитель ВД / запас +30% (по умолчанию)</option>
                       <option value="brush_10">Кисть / шпатель (+10% потерь)</option>
-                      <option value="sprayer_30">Распылитель ВД (+30% потерь)</option>
+                      <option value="brush_5">Кисть / шпатель (+5% потерь)</option>
                     </select>
                   )}
                 />
